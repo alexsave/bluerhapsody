@@ -29,8 +29,8 @@ typedef struct DataChunk {
 } DataChunk;
  
 static const u32 SAMPLE_FREQUENCY = 48000;
-static const u16 SAMPLE_BITS = 8;
-static const u16 DURATION_S = 10;
+static const u16 SAMPLE_BITS = 16;
+static const u16 DURATION_S = 30;
 
 static const u32 NUM_SAMPLES = SAMPLE_FREQUENCY * DURATION_S;
 static const u32 DATA_BYTES = (NUM_SAMPLES * SAMPLE_BITS) / 8;
@@ -83,27 +83,100 @@ int main(int argc, char* argv[]){
     
     // now we can do fun stuff with sampled data
 
+    static const u16 A4 = 440;
 
-    for (u32 i = 0; i < NUM_SAMPLES; i++) {
+    static const u16 A3 = A4 >> 1;
+    static const u16 A5 = A4 << 1;
+
+    const f64 SEMITONE_MULT = pow(2.0, 1.0/12.0);
+    printf("%lf\n", SEMITONE_MULT);
+
+    // BEHOLD - the ladder of semitones
+    const u16 AS3 = A3 * SEMITONE_MULT;
+    const u16 B3 = A3 * SEMITONE_MULT * SEMITONE_MULT;
+    const u16 C3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT;
+    const u16 CS3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT;;
+    const u16 D3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT;
+    const u16 DS3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT;
+    const u16 E3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT;
+    const u16 F3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT;
+    const u16 FS3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT;
+    const u16 G3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT;
+    const u16 GS3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT;
+
+    u16 note_duration_ms = 200;
+    u16 rest_duration_ms = 200;
+
+    u8 * run = sampled_data;
+    f32 note = 220.0;
+    for (u8 i = 0; i < 24; i++) {
+        //printf("%d\n", run - sampled_data);
+
+        //printf("%d\n", SAMPLE_FREQUENCY / 1000 * note_duration_ms);
+        //exit(1);
+        for (u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
+            //printf("%d\n", run - sampled_data);
+            if (SAMPLE_BITS == 16) {
+                i16 sample_amplitude = (1<<15) * amplitude * sin((note * 2 * M_PI * j) / SAMPLE_FREQUENCY);
+                //printf("writing run\n");
+                *run = sample_amplitude & 255;
+                *(run + 1) = sample_amplitude >> 8;
+                //printf("done writing run\n");
+
+                run += 2;
+            } else if (SAMPLE_BITS == 8) {
+                u8 sample_amplitude = 128 + (128 * amplitude * sin((note_frequency * 2 * M_PI * i) / SAMPLE_FREQUENCY));
+                //printf("%d %d %f\n", i, sample_amplitude, sin((note_frequency * 2 * M_PI * i)/SAMPLE_FREQUENCY));
+                *run = sample_amplitude;
+
+                run++;
+            }
+        }
+        //printf("%d\n", run - sampled_data);
+            //printf("\n");
+
+
+        // insert note
+
+        // insert rest
+
+        // how many samples are in 200ms?
+        if (SAMPLE_BITS == 16) 
+            run += 2 * SAMPLE_FREQUENCY * rest_duration_ms / 1000;
+        else if (SAMPLE_BITS == 8) 
+            run += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
+
+        note *= SEMITONE_MULT;
+
+    }
+
+
+
+
+
+    // E, F, F#, G, G%, A, A#, B, C, C#, D, D#
+
+
+    /*for (u32 i = 0; i < NUM_SAMPLES; i++) {
 
         if (SAMPLE_BITS == 16) {
             i16 sample_amplitude = (1<<15) * amplitude * sin((note_frequency * 2 * M_PI * i) / SAMPLE_FREQUENCY);
 
-            printf("%d %d\n", i, sample_amplitude);
+            //printf("%d %d\n", i, sample_amplitude);
 
             // hardcoded specific to 16-bit samples
             sampled_data[2 * i] = sample_amplitude & 255;
             sampled_data[2 * i  + 1] = sample_amplitude >> 8;
         } else if (SAMPLE_BITS == 8) {
             u8 sample_amplitude = 128 + (128 * amplitude * sin((note_frequency * 2 * M_PI * i) / SAMPLE_FREQUENCY));
-            printf("%d %d %f\n", i, sample_amplitude, sin((note_frequency * 2 * M_PI * i)/SAMPLE_FREQUENCY));
+            //printf("%d %d %f\n", i, sample_amplitude, sin((note_frequency * 2 * M_PI * i)/SAMPLE_FREQUENCY));
             sampled_data[i] = sample_amplitude;
         }
 
-    }
+    }*/
 
     FILE * file;
-    file = fopen("1b.wav" , "wb");
+    file = fopen("m01_scale.wav" , "wb");
 
     if (!file)
         return 1;

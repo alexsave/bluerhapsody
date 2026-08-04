@@ -29,8 +29,8 @@ typedef struct DataChunk {
 } DataChunk;
  
 static const u32 SAMPLE_FREQUENCY = 48000;
-static const u16 SAMPLE_BITS = 16;
-static const u16 DURATION_S = 1;
+static const u16 SAMPLE_BITS = 8;
+static const u16 DURATION_S = 10;
 
 static const u32 NUM_SAMPLES = SAMPLE_FREQUENCY * DURATION_S;
 static const u32 DATA_BYTES = (NUM_SAMPLES * SAMPLE_BITS) / 8;
@@ -69,9 +69,11 @@ int main(int argc, char* argv[]){
     
     u8* sampled_data = (u8*)(wav + sizeof(RiffChunk) + sizeof(FormatChunk) + sizeof(DataChunk));
 
-    // hz
+    // parameters
     u16 note_frequency = 440;
-    u16 amplitude = 800;
+
+    f32 amplitude = .05;
+
     // frequency means that it does 440 full rotations through circle in 1 second
     // thus y = sin(2pi*x)
     // thus y = sin(440 * 2pi*x)
@@ -81,17 +83,23 @@ int main(int argc, char* argv[]){
     
     // now we can do fun stuff with sampled data
 
-    printf("%f\n", sin((M_PI * note_frequency * 2 * 1000) / SAMPLE_FREQUENCY));
 
     for (u32 i = 0; i < NUM_SAMPLES; i++) {
-        i16 sample_amplitude = amplitude * sin((note_frequency * 2 * M_PI * i) / SAMPLE_FREQUENCY);
-        printf("%d\n", sample_amplitude);
 
+        if (SAMPLE_BITS == 16) {
+            i16 sample_amplitude = (1<<15) * amplitude * sin((note_frequency * 2 * M_PI * i) / SAMPLE_FREQUENCY);
 
-        // hardcoded specific to 16-bit samples
-        sampled_data[2 * i] = sample_amplitude & 255;
-        sampled_data[2 * i  + 1] = sample_amplitude >> 8;
-        
+            printf("%d %d\n", i, sample_amplitude);
+
+            // hardcoded specific to 16-bit samples
+            sampled_data[2 * i] = sample_amplitude & 255;
+            sampled_data[2 * i  + 1] = sample_amplitude >> 8;
+        } else if (SAMPLE_BITS == 8) {
+            u8 sample_amplitude = 128 + (128 * amplitude * sin((note_frequency * 2 * M_PI * i) / SAMPLE_FREQUENCY));
+            printf("%d %d %f\n", i, sample_amplitude, sin((note_frequency * 2 * M_PI * i)/SAMPLE_FREQUENCY));
+            sampled_data[i] = sample_amplitude;
+        }
+
     }
 
     FILE * file;

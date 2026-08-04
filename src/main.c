@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "types.h"
 
@@ -27,11 +28,12 @@ typedef struct DataChunk {
     u8 sampledData[];
 } DataChunk;
  
-static const u32 FREQUENCY = 48000;
+static const u32 SAMPLE_FREQUENCY = 48000;
 static const u16 SAMPLE_BITS = 16;
 static const u16 DURATION_S = 1;
 
-static const u32 DATA_BYTES = (FREQUENCY * DURATION_S * SAMPLE_BITS) / 8;
+static const u32 NUM_SAMPLES = SAMPLE_FREQUENCY * DURATION_S;
+static const u32 DATA_BYTES = (NUM_SAMPLES * SAMPLE_BITS) / 8;
 static const u32 REAL_FILE_SIZE = sizeof(RiffChunk) + sizeof(FormatChunk) + sizeof(DataChunk) + DATA_BYTES;
 
 int main(int argc, char* argv[]){
@@ -50,11 +52,11 @@ int main(int argc, char* argv[]){
 
     fc->audioFormat = 1;
     fc->nbrChannels = 1;
-    fc->frequency = FREQUENCY;
+    fc->frequency = SAMPLE_FREQUENCY;
     fc->bitsPerSample = SAMPLE_BITS;
 
     fc->bytePerBloc = (fc->nbrChannels * SAMPLE_BITS / 8);
-    fc->bytePerSec = FREQUENCY * fc->bytePerBloc;
+    fc->bytePerSec = SAMPLE_FREQUENCY * fc->bytePerBloc;
 
     DataChunk * dc = (DataChunk*)(wav + sizeof(RiffChunk) + sizeof(FormatChunk));
     dc->dataBlocID = (((((0x61 << 8) + 0x74) << 8) + 0x61) << 8) + 0x64;
@@ -65,15 +67,35 @@ int main(int argc, char* argv[]){
     // "Overall file size minus 8 bytes"
     rf->fileSize = REAL_FILE_SIZE - 8;
     
-    u8* sampledData = (u8*)(wav + sizeof(RiffChunk) + sizeof(FormatChunk) + sizeof(DataChunk));
+    u8* sampled_data = (u8*)(wav + sizeof(RiffChunk) + sizeof(FormatChunk) + sizeof(DataChunk));
 
+    // hz
+    u16 note_frequency = 440;
+    u16 amplitude = 800;
+    // frequency means that it does 440 full rotations through circle in 1 second
+    // thus y = sin(2pi*x)
+    // thus y = sin(440 * 2pi*x)
+    // if we step through sample by sample, x will be i/SAMPLE_FREQ
+
+    // i will go all the way up to SAMPLE_FREQ * DURATION
+    
     // now we can do fun stuff with sampled data
-    
-    
 
+    printf("%f\n", sin((M_PI * note_frequency * 2 * 1000) / SAMPLE_FREQUENCY));
+
+    for (u32 i = 0; i < NUM_SAMPLES; i++) {
+        i16 sample_amplitude = amplitude * sin((note_frequency * 2 * M_PI * i) / SAMPLE_FREQUENCY);
+        printf("%d\n", sample_amplitude);
+
+
+        // hardcoded specific to 16-bit samples
+        sampled_data[2 * i] = sample_amplitude & 255;
+        sampled_data[2 * i  + 1] = sample_amplitude >> 8;
+        
+    }
 
     FILE * file;
-    file = fopen("1a.wav" , "wb");
+    file = fopen("1b.wav" , "wb");
 
     if (!file)
         return 1;
@@ -81,7 +103,6 @@ int main(int argc, char* argv[]){
     fwrite((const void *)wav,  sizeof(u8), REAL_FILE_SIZE, file);
 
     fclose(file);
-
     free(wav);
 
     return 0;

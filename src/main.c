@@ -115,10 +115,13 @@ int main(int argc, char* argv[]){
 
     void* wav = write_headers();
 
-    u8* sampled_data = (u8*)(wav + sizeof(RiffChunk) + sizeof(FormatChunk) + sizeof(DataChunk));
 
-    // parameters
-    f32 amplitude = .1;
+    f32 gain = -15.0;
+
+    const f64 DB_MULT = pow(10.0, 1.0/10.0);
+    printf("%lf\n", DB_MULT);
+
+    f32 effective_amplitude = pow(DB_MULT, gain);
 
     // frequency means that it does 440 full rotations through circle in 1 second
     // thus y = sin(2pi*x)
@@ -165,21 +168,22 @@ int main(int argc, char* argv[]){
     f64* r = right;
     for (u8 i = 0; i < 6; i++) {
         for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
-            //*l = ((NUM_SAMPLES - (l- left)))*amplitude * sin((note * 2 * M_PI * j) / SAMPLE_FREQUENCY)/ NUM_SAMPLES;
+            //*l = ((NUM_SAMPLES - (l- left)))*effective_amplitude * sin((note * 2 * M_PI * j) / SAMPLE_FREQUENCY)/ NUM_SAMPLES;
 
-            f32 base = note * 3.1;
+            f32 base = note * 2.0;
             f32 fifth = note * 3.0;
             
+            // note that sin(a) + sin(b) = 2 * sin((a+b)/2) * cos((a-b)/2)
 
             *l = sin((base * 2 * M_PI * j) / SAMPLE_FREQUENCY);
             *l += sin((fifth * 2 * M_PI * j) / SAMPLE_FREQUENCY);
-            *l *= amplitude;
+            *l *= effective_amplitude;
             //printf("%lf\n", *l);
             l++;
 
             
 
-            //*r = ((r-right))*amplitude * sin((note * 2 * M_PI * j) / SAMPLE_FREQUENCY) / NUM_SAMPLES;
+            //*r = ((r-right))*effective_amplitude * sin((note * 2 * M_PI * j) / SAMPLE_FREQUENCY) / NUM_SAMPLES;
             //r++;
         }
         l += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
@@ -188,6 +192,7 @@ int main(int argc, char* argv[]){
     }
 
 
+    u8* sampled_data = (u8*)(wav + sizeof(RiffChunk) + sizeof(FormatChunk) + sizeof(DataChunk));
     write_samples(left, left, sampled_data);
 
 

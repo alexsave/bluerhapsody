@@ -27,7 +27,7 @@ typedef struct DataChunk {
     u32 dataSize;//        (4 bytes) : SampledData size
     u8 sampledData[];
 } DataChunk;
- 
+
 static const u32 SAMPLE_FREQUENCY = 48000;
 static const u16 SAMPLE_BITS = 16;
 static const u16 DURATION_S = 300;
@@ -40,95 +40,50 @@ static const u32 REAL_FILE_SIZE = sizeof(RiffChunk) + sizeof(FormatChunk) + size
 
 // left will be mono in case of channel count == 1
 // pass in f64s, let this turn it into whatever
-void write_samples(f64* left_channel, f64* right_channel, void* out) {
+void write_samples(f64* left, f64* right, u8* out) {
     if (SAMPLE_BITS == 16) {
-        u8 * out_run = (u8 *)out;
-        
-        f64* run = (f64*)left_channel;
+        for (u32 i = 0; i < NUM_SAMPLES; i++) {
+            i16 sample_amplitude = (*left) * (1 << 15);
+            *out = sample_amplitude & 255;
+            *(out + 1) = sample_amplitude >> 8;
 
-        if (CHANNEL_COUNT == 1){
-
-            for (u32 i = 0; i < NUM_SAMPLES; i++) {
-                // multiply by 32767
-                i16 sample_amplitude = (*run) * (1 << 15);
-
-                *out_run = sample_amplitude & 255;
-                *(out_run + 1) = sample_amplitude >> 8;
-
-                out_run += 2;
-
-                run++;
+            if (CHANNEL_COUNT == 2) {
+                out += 2;
+                sample_amplitude = (*right) * (1 << 15);
+                *out = sample_amplitude & 255;
+                *(out + 1) = sample_amplitude >> 8;
+                right++;
+                
             }
 
-        } else if (CHANNEL_COUNT == 2){
-            f64* run2 = (f64*)right_channel;
+            out += 2;
+            left++;
 
-            for (u32 i = 0; i < NUM_SAMPLES; i++) {
-                // multiply by 32767
-                i16 sample_amplitude = (*run) * (1 << 15);
-
-                *out_run = sample_amplitude & 255;
-                *(out_run + 1) = sample_amplitude >> 8;
-
-                out_run += 2;
-
-                run++;
-
-                sample_amplitude = (*run2) * (1 << 15);
-
-                *out_run = sample_amplitude & 255;
-                *(out_run + 1) = sample_amplitude >> 8;
-
-                out_run += 2;
-
-                run2++;
-            }
         }
     } else if (SAMPLE_BITS == 8) {
-        f64 * run = (f64*)left_channel;
-
-        u8 * out_run = (u8 *) out;
-        if (CHANNEL_COUNT == 1){
-            // -1.0 -> 0. 1.0 -> 256
-            for (u32 i = 0; i < NUM_SAMPLES; i++) {
-                u8 sample_amplitude = ((*run)+ 1.0)*128;
-
-                *out_run = sample_amplitude;
-
-                run++;
-                out_run++;
+        for (u32 i = 0; i < NUM_SAMPLES; i++) {
+            u8 sample_amplitude = ((*left)+ 1.0)*128;
+            *out = sample_amplitude;
+            if (CHANNEL_COUNT == 2) {
+                out++;
+                sample_amplitude = ((*right)+ 1.0)*128;
+                *out = sample_amplitude;
+                right++;
             }
-        } else if (CHANNEL_COUNT == 2) {
-            f64 * run2 = right_channel;
-            for (u32 i = 0; i < NUM_SAMPLES; i++) {
-                // write left
-                u8 sample_amplitude = ((*run)+ 1.0)*128;
-                *out_run = sample_amplitude;
 
-                // move out pointer
-                out_run++;
-
-                // write right
-                sample_amplitude = ((*run2)+ 1.0)*128;
-                *out_run = sample_amplitude;
-
-                out_run++;
-
-                run++;
-                run2++;
-            }
+            out++;
+            left++;
         }
     }
 }
 
-
-int main(int argc, char* argv[]){
-
+// returns wav ready to go
+void* write_headers() {
     void* wav = malloc(REAL_FILE_SIZE);
-    
+
     RiffChunk * rf = (RiffChunk*)wav;
     rf->fileTypeBlocID = (((((0x46 << 8) + 0x46) << 8) + 0x49) << 8) + 0x52;
-    
+
 
     rf->fileFormatID = (((((0x45 << 8) + 0x56) << 8) + 0x41) << 8) + 0x57;
 
@@ -152,7 +107,14 @@ int main(int argc, char* argv[]){
     // only FileFormatID from RiffChunk is used here
     // "Overall file size minus 8 bytes"
     rf->fileSize = REAL_FILE_SIZE - 8;
-    
+
+    return wav;
+}
+
+int main(int argc, char* argv[]){
+
+    void* wav = write_headers();
+
     u8* sampled_data = (u8*)(wav + sizeof(RiffChunk) + sizeof(FormatChunk) + sizeof(DataChunk));
 
     // parameters
@@ -166,7 +128,7 @@ int main(int argc, char* argv[]){
     // if we step through sample by sample, x will be i/SAMPLE_FREQ
 
     // i will go all the way up to SAMPLE_FREQ * DURATION
-    
+
     // now we can do fun stuff with sampled data
 
     static const u16 A4 = 440;
@@ -209,32 +171,14 @@ int main(int argc, char* argv[]){
         run += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
         note *= SEMITONE_MULT;
     }
-    
-    
+
+
     write_samples(left, left, sampled_data);
 
     free(left);
 
 
     // E, F, F#, G, G%, A, A#, B, C, C#, D, D#
-
-
-    /*for (u32 i = 0; i < NUM_SAMPLES; i++) {
-
-        if (SAMPLE_BITS == 16) {
-            i16 sample_amplitude = (1<<15) * amplitude * sin((note_frequency * 2 * M_PI * i) / SAMPLE_FREQUENCY);
-
-
-            // hardcoded specific to 16-bit samples
-            sampled_data[2 * i] = sample_amplitude & 255;
-            sampled_data[2 * i  + 1] = sample_amplitude >> 8;
-        } else if (SAMPLE_BITS == 8) {
-            u8 sample_amplitude = 128 + (128 * amplitude * sin((note_frequency * 2 * M_PI * i) / SAMPLE_FREQUENCY));
-            //printf("%d %d %f\n", i, sample_amplitude, sin((note_frequency * 2 * M_PI * i)/SAMPLE_FREQUENCY));
-            sampled_data[i] = sample_amplitude;
-        }
-
-    }*/
 
     FILE * file;
     file = fopen("m01_scale.wav" , "wb");

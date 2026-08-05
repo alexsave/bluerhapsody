@@ -30,11 +30,97 @@ typedef struct DataChunk {
  
 static const u32 SAMPLE_FREQUENCY = 48000;
 static const u16 SAMPLE_BITS = 16;
-static const u16 DURATION_S = 30;
+static const u16 DURATION_S = 300;
+
+static const u8 CHANNEL_COUNT = 2;
 
 static const u32 NUM_SAMPLES = SAMPLE_FREQUENCY * DURATION_S;
-static const u32 DATA_BYTES = (NUM_SAMPLES * SAMPLE_BITS) / 8;
+static const u32 DATA_BYTES = (CHANNEL_COUNT * NUM_SAMPLES * SAMPLE_BITS) / 8;
 static const u32 REAL_FILE_SIZE = sizeof(RiffChunk) + sizeof(FormatChunk) + sizeof(DataChunk) + DATA_BYTES;
+
+// left will be mono in case of channel count == 1
+// pass in f64s, let this turn it into whatever
+void write_samples(f64* left_channel, f64* right_channel, void* out) {
+    if (SAMPLE_BITS == 16) {
+        u8 * out_run = (u8 *)out;
+        
+        f64* run = (f64*)left_channel;
+
+        if (CHANNEL_COUNT == 1){
+
+            for (u32 i = 0; i < NUM_SAMPLES; i++) {
+                // multiply by 32767
+                i16 sample_amplitude = (*run) * (1 << 15);
+
+                *out_run = sample_amplitude & 255;
+                *(out_run + 1) = sample_amplitude >> 8;
+
+                out_run += 2;
+
+                run++;
+            }
+
+        } else if (CHANNEL_COUNT == 2){
+            f64* run2 = (f64*)right_channel;
+
+            for (u32 i = 0; i < NUM_SAMPLES; i++) {
+                // multiply by 32767
+                i16 sample_amplitude = (*run) * (1 << 15);
+
+                *out_run = sample_amplitude & 255;
+                *(out_run + 1) = sample_amplitude >> 8;
+
+                out_run += 2;
+
+                run++;
+
+                sample_amplitude = (*run2) * (1 << 15);
+
+                *out_run = sample_amplitude & 255;
+                *(out_run + 1) = sample_amplitude >> 8;
+
+                out_run += 2;
+
+                run2++;
+            }
+        }
+    } else if (SAMPLE_BITS == 8) {
+        f64 * run = (f64*)left_channel;
+
+        u8 * out_run = (u8 *) out;
+        if (CHANNEL_COUNT == 1){
+            // -1.0 -> 0. 1.0 -> 256
+            for (u32 i = 0; i < NUM_SAMPLES; i++) {
+                u8 sample_amplitude = ((*run)+ 1.0)*128;
+
+                *out_run = sample_amplitude;
+
+                run++;
+                out_run++;
+            }
+        } else if (CHANNEL_COUNT == 2) {
+            f64 * run2 = right_channel;
+            for (u32 i = 0; i < NUM_SAMPLES; i++) {
+                // write left
+                u8 sample_amplitude = ((*run)+ 1.0)*128;
+                *out_run = sample_amplitude;
+
+                // move out pointer
+                out_run++;
+
+                // write right
+                sample_amplitude = ((*run2)+ 1.0)*128;
+                *out_run = sample_amplitude;
+
+                out_run++;
+
+                run++;
+                run2++;
+            }
+        }
+    }
+}
+
 
 int main(int argc, char* argv[]){
 
@@ -51,7 +137,7 @@ int main(int argc, char* argv[]){
     fc->blocSize = 16;
 
     fc->audioFormat = 1;
-    fc->nbrChannels = 1;
+    fc->nbrChannels = CHANNEL_COUNT;
     fc->frequency = SAMPLE_FREQUENCY;
     fc->bitsPerSample = SAMPLE_BITS;
 
@@ -104,54 +190,30 @@ int main(int argc, char* argv[]){
     const u16 G3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT;
     const u16 GS3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT;
 
-    u16 note_duration_ms = 200;
+    u16 note_duration_ms = 5000;
     u16 rest_duration_ms = 200;
 
-    u8 * run = sampled_data;
-    f32 note = 220.0;
-    for (u8 i = 0; i < 24; i++) {
-        //printf("%d\n", run - sampled_data);
 
-        //printf("%d\n", SAMPLE_FREQUENCY / 1000 * note_duration_ms);
-        //exit(1);
-        for (u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
-            //printf("%d\n", run - sampled_data);
-            if (SAMPLE_BITS == 16) {
-                i16 sample_amplitude = (1<<15) * amplitude * sin((note * 2 * M_PI * j) / SAMPLE_FREQUENCY);
-                //printf("writing run\n");
-                *run = sample_amplitude & 255;
-                *(run + 1) = sample_amplitude >> 8;
-                //printf("done writing run\n");
+    // create f64*
 
-                run += 2;
-            } else if (SAMPLE_BITS == 8) {
-                u8 sample_amplitude = 128 + (128 * amplitude * sin((note_frequency * 2 * M_PI * i) / SAMPLE_FREQUENCY));
-                //printf("%d %d %f\n", i, sample_amplitude, sin((note_frequency * 2 * M_PI * i)/SAMPLE_FREQUENCY));
-                *run = sample_amplitude;
+    f64* left = malloc(sizeof(f64) * NUM_SAMPLES);
 
-                run++;
-            }
+    f32 note = 440;
+
+    f64* run = left;
+    for (u8 i = 0; i < 12; i++) {
+        for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
+            *run = amplitude * sin((note * 2 * M_PI * j) / SAMPLE_FREQUENCY);
+            run++;
         }
-        //printf("%d\n", run - sampled_data);
-            //printf("\n");
-
-
-        // insert note
-
-        // insert rest
-
-        // how many samples are in 200ms?
-        if (SAMPLE_BITS == 16) 
-            run += 2 * SAMPLE_FREQUENCY * rest_duration_ms / 1000;
-        else if (SAMPLE_BITS == 8) 
-            run += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
-
+        run += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
         note *= SEMITONE_MULT;
-
     }
+    
+    
+    write_samples(left, left, sampled_data);
 
-
-
+    free(left);
 
 
     // E, F, F#, G, G%, A, A#, B, C, C#, D, D#
@@ -162,7 +224,6 @@ int main(int argc, char* argv[]){
         if (SAMPLE_BITS == 16) {
             i16 sample_amplitude = (1<<15) * amplitude * sin((note_frequency * 2 * M_PI * i) / SAMPLE_FREQUENCY);
 
-            //printf("%d %d\n", i, sample_amplitude);
 
             // hardcoded specific to 16-bit samples
             sampled_data[2 * i] = sample_amplitude & 255;

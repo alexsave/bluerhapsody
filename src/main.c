@@ -118,9 +118,7 @@ int main(int argc, char* argv[]){
     u8* sampled_data = (u8*)(wav + sizeof(RiffChunk) + sizeof(FormatChunk) + sizeof(DataChunk));
 
     // parameters
-    u16 note_frequency = 440;
-
-    f32 amplitude = .05;
+    f32 amplitude = .1;
 
     // frequency means that it does 440 full rotations through circle in 1 second
     // thus y = sin(2pi*x)
@@ -131,15 +129,14 @@ int main(int argc, char* argv[]){
 
     // now we can do fun stuff with sampled data
 
-    static const u16 A4 = 440;
 
-    static const u16 A3 = A4 >> 1;
-    static const u16 A5 = A4 << 1;
 
     const f64 SEMITONE_MULT = pow(2.0, 1.0/12.0);
-    printf("%lf\n", SEMITONE_MULT);
 
     // BEHOLD - the ladder of semitones
+    /*static const u16 A3 = A4 >> 1;
+    static const u16 A4 = 440;
+    static const u16 A5 = A4 << 1;
     const u16 AS3 = A3 * SEMITONE_MULT;
     const u16 B3 = A3 * SEMITONE_MULT * SEMITONE_MULT;
     const u16 C3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT;
@@ -151,26 +148,39 @@ int main(int argc, char* argv[]){
     const u16 FS3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT;
     const u16 G3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT;
     const u16 GS3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT;
+        b*/
 
-    u16 note_duration_ms = 5000;
+    u16 note_duration_ms = 10000;
     u16 rest_duration_ms = 200;
 
 
     // create f64*
 
-    f64* left = malloc(sizeof(f64) * NUM_SAMPLES);
-    f64* right = calloc(sizeof(f64) , NUM_SAMPLES);
+    f64* left = calloc(sizeof(f64), NUM_SAMPLES);
+    f64* right = calloc(sizeof(f64), NUM_SAMPLES);
 
-    f32 note = 440;
+    f32 note = 110.0;
 
     f64* l = left;
     f64* r = right;
-    for (u8 i = 0; i < 12; i++) {
+    for (u8 i = 0; i < 6; i++) {
         for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
-            *l = ((NUM_SAMPLES - (l- left)))*amplitude * sin((note * 2 * M_PI * j) / SAMPLE_FREQUENCY)/ NUM_SAMPLES;
+            //*l = ((NUM_SAMPLES - (l- left)))*amplitude * sin((note * 2 * M_PI * j) / SAMPLE_FREQUENCY)/ NUM_SAMPLES;
+
+            f32 base = note * 3.1;
+            f32 fifth = note * 3.0;
+            
+
+            *l = sin((base * 2 * M_PI * j) / SAMPLE_FREQUENCY);
+            *l += sin((fifth * 2 * M_PI * j) / SAMPLE_FREQUENCY);
+            *l *= amplitude;
+            //printf("%lf\n", *l);
             l++;
-            *r = ((r-right))*amplitude * sin((note * 2 * M_PI * j) / SAMPLE_FREQUENCY) / NUM_SAMPLES;
-            r++;
+
+            
+
+            //*r = ((r-right))*amplitude * sin((note * 2 * M_PI * j) / SAMPLE_FREQUENCY) / NUM_SAMPLES;
+            //r++;
         }
         l += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
         r += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
@@ -178,12 +188,12 @@ int main(int argc, char* argv[]){
     }
 
 
-    write_samples(left, right, sampled_data);
+    write_samples(left, left, sampled_data);
 
 
     // E, F, F#, G, G%, A, A#, B, C, C#, D, D#
 
-    FILE * file = fopen("m01_scale.wav" , "wb");
+    FILE * file = fopen("2a.wav" , "wb");
 
     if (!file)
         return 1;

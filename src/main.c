@@ -30,7 +30,7 @@ typedef struct DataChunk {
 
 static const u32 SAMPLE_FREQUENCY = 48000;
 static const u16 SAMPLE_BITS = 16;
-static const u16 DURATION_S = 300;
+static const u16 DURATION_S = 70;
 
 static const u8 CHANNEL_COUNT = 2;
 
@@ -159,37 +159,41 @@ int main(int argc, char* argv[]){
     // create f64*
 
     f64* left = malloc(sizeof(f64) * NUM_SAMPLES);
+    f64* right = calloc(sizeof(f64) , NUM_SAMPLES);
 
     f32 note = 440;
 
-    f64* run = left;
+    f64* l = left;
+    f64* r = right;
     for (u8 i = 0; i < 12; i++) {
         for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
-            *run = amplitude * sin((note * 2 * M_PI * j) / SAMPLE_FREQUENCY);
-            run++;
+            *l = ((NUM_SAMPLES - (l- left)))*amplitude * sin((note * 2 * M_PI * j) / SAMPLE_FREQUENCY)/ NUM_SAMPLES;
+            l++;
+            *r = ((r-right))*amplitude * sin((note * 2 * M_PI * j) / SAMPLE_FREQUENCY) / NUM_SAMPLES;
+            r++;
         }
-        run += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
+        l += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
+        r += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
         note *= SEMITONE_MULT;
     }
 
 
-    write_samples(left, left, sampled_data);
-
-    free(left);
+    write_samples(left, right, sampled_data);
 
 
     // E, F, F#, G, G%, A, A#, B, C, C#, D, D#
 
-    FILE * file;
-    file = fopen("m01_scale.wav" , "wb");
+    FILE * file = fopen("m01_scale.wav" , "wb");
 
     if (!file)
         return 1;
-
     fwrite((const void *)wav,  sizeof(u8), REAL_FILE_SIZE, file);
 
     fclose(file);
+
+
     free(wav);
+    free(left);
 
     return 0;
 }

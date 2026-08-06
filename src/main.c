@@ -116,7 +116,7 @@ int main(int argc, char* argv[]){
     void* wav = write_headers();
 
 
-    f32 gain = -15.0;
+    f32 gain = -12.0;
 
     const f64 DB_MULT = pow(10.0, 1.0/10.0);
     printf("%lf\n", DB_MULT);
@@ -162,11 +162,62 @@ int main(int argc, char* argv[]){
     f64* left = calloc(sizeof(f64), NUM_SAMPLES);
     f64* right = calloc(sizeof(f64), NUM_SAMPLES);
 
-    f32 note = 110.0;
+    // just do A4 for now
+    f32 note = 440.0;
 
     f64* l = left;
     f64* r = right;
-    for (u8 i = 0; i < 6; i++) {
+
+    // sin
+    for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
+        *l = sin((note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * effective_amplitude;
+        l++;
+    }
+    l += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
+
+    u16 levels = 20;
+
+    // sawtooth
+    for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
+        for (u16 n = 1; n <= levels; n++) {
+            *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * -2.0 / M_PI / n;
+        }
+        
+        *l *= effective_amplitude;
+        l++;
+    }
+    l += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
+
+    // square
+    for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
+        for (u16 n = 1; n <= levels; n++) {
+            if (n & 1 == 0) continue;
+            *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * 4.0 / M_PI / n;
+        }
+        
+        *l *= effective_amplitude;
+        l++;
+    }
+    l += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
+
+    // triangle
+    for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
+        for (u16 n = 1; n <= levels; n++) {
+            if (n & 1 == 0) continue;
+            
+            // at 1 positive, at 3 negative //001 011
+            if (n & 2 == 1) // subtrac
+                *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * -8.0 / M_PI / M_PI / n / n;
+            else // add
+                *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * 8.0 / M_PI / M_PI / n / n;
+        }
+
+        *l *= effective_amplitude;
+        l++;
+    }
+    l += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
+
+    /*for (u8 i = 0; i < 1; i++) {
         for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
             //*l = ((NUM_SAMPLES - (l- left)))*effective_amplitude * sin((note * 2 * M_PI * j) / SAMPLE_FREQUENCY)/ NUM_SAMPLES;
 
@@ -189,7 +240,7 @@ int main(int argc, char* argv[]){
         l += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
         r += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
         note *= SEMITONE_MULT;
-    }
+    }*/
 
 
     u8* sampled_data = (u8*)(wav + sizeof(RiffChunk) + sizeof(FormatChunk) + sizeof(DataChunk));
@@ -198,7 +249,7 @@ int main(int argc, char* argv[]){
 
     // E, F, F#, G, G%, A, A#, B, C, C#, D, D#
 
-    FILE * file = fopen("2a.wav" , "wb");
+    FILE * file = fopen("2c.wav" , "wb");
 
     if (!file)
         return 1;

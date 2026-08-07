@@ -30,7 +30,7 @@ typedef struct DataChunk {
 
 static const u32 SAMPLE_FREQUENCY = 48000;
 static const u16 SAMPLE_BITS = 16;
-static const u16 DURATION_S = 70;
+static const u16 DURATION_S = 80;
 
 static const u8 CHANNEL_COUNT = 2;
 
@@ -216,6 +216,41 @@ int main(int argc, char* argv[]){
         l++;
     }
     l += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
+
+    // 1/n
+    for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
+        for (u16 n = 1; n <= levels; n++) {
+            *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) / n;
+        }
+        
+        *l *= effective_amplitude;
+        l++;
+    }
+    l += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
+
+    // 1/n^2
+    for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
+        for (u16 n = 1; n <= levels; n++) {
+            *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) / n / n;
+        }
+        
+        *l *= effective_amplitude;
+        l++;
+    }
+    l += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
+
+    // 1/n^3
+    for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
+        for (u16 n = 1; n <= levels; n++) {
+            *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) / n / n / n;
+        }
+        
+        *l *= effective_amplitude;
+        l++;
+    }
+    l += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
+
+
 
     /*for (u8 i = 0; i < 1; i++) {
         for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {

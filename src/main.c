@@ -149,7 +149,7 @@ int main(int argc, char* argv[]){
     void* wav = write_headers();
 
 
-    f32 gain = -12.0;
+    f32 gain = -8.0;
 
     const f64 DB_MULT = pow(10.0, 1.0/10.0);
     printf("%lf\n", DB_MULT);

@@ -30,7 +30,7 @@ typedef struct DataChunk {
 
 static const u32 SAMPLE_FREQUENCY = 48000;
 static const u16 SAMPLE_BITS = 16;
-static const u16 DURATION_S = 80;
+static const u16 DURATION_S = 200;
 
 static const u8 CHANNEL_COUNT = 2;
 
@@ -111,6 +111,52 @@ void* write_headers() {
     return wav;
 }
 
+void sawtooth(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms ) {
+    u16 levels = 20;
+    // sawtooth
+    for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
+        for (u16 n = 1; n <= levels; n++) {
+            *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * -2.0 / M_PI / n;
+        }
+        
+        *l *= effective_amplitude;
+        l++;
+    }
+}
+
+void square(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms) {
+    u16 levels = 20;
+    // square
+    for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
+        for (u16 n = 1; n <= levels; n++) {
+            if (n & 1 == 0) continue;
+            *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * 4.0 / M_PI / n;
+        }
+        
+        *l *= effective_amplitude;
+        l++;
+    }
+}
+
+void triangle(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms) { 
+    u16 levels = 20;
+    // triangle
+    for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
+        for (u16 n = 1; n <= levels; n++) {
+            if (n & 1 == 0) continue;
+            
+            // at 1 positive, at 3 negative //001 011
+            if (n & 2 == 1) // subtrac
+                *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * -8.0 / M_PI / M_PI / n / n;
+            else // add
+                *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * 8.0 / M_PI / M_PI / n / n;
+        }
+
+        *l *= effective_amplitude;
+        l++;
+    }
+}
+
 int main(int argc, char* argv[]){
 
     void* wav = write_headers();
@@ -169,86 +215,19 @@ int main(int argc, char* argv[]){
     f64* r = right;
 
     // sin
-    for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
-        *l = sin((note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * effective_amplitude;
+
+    // 16 s in I hear something - roughly 32Hz
+
+    // 100x, 1:24 loses me
+    // my hearing is roughly 32Hz to 16.8kHz wow
+    for(u32 j = 0; j < NUM_SAMPLES; j++) {
+        *l = sin((2 * M_PI * j * j) *100 / SAMPLE_FREQUENCY / SAMPLE_FREQUENCY) * effective_amplitude;
         l++;
     }
     l += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
 
-    u16 levels = 20;
 
-    // sawtooth
-    for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
-        for (u16 n = 1; n <= levels; n++) {
-            *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * -2.0 / M_PI / n;
-        }
-        
-        *l *= effective_amplitude;
-        l++;
-    }
-    l += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
 
-    // square
-    for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
-        for (u16 n = 1; n <= levels; n++) {
-            if (n & 1 == 0) continue;
-            *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * 4.0 / M_PI / n;
-        }
-        
-        *l *= effective_amplitude;
-        l++;
-    }
-    l += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
-
-    // triangle
-    for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
-        for (u16 n = 1; n <= levels; n++) {
-            if (n & 1 == 0) continue;
-            
-            // at 1 positive, at 3 negative //001 011
-            if (n & 2 == 1) // subtrac
-                *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * -8.0 / M_PI / M_PI / n / n;
-            else // add
-                *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * 8.0 / M_PI / M_PI / n / n;
-        }
-
-        *l *= effective_amplitude;
-        l++;
-    }
-    l += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
-
-    // 1/n
-    for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
-        for (u16 n = 1; n <= levels; n++) {
-            *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) / n;
-        }
-        
-        *l *= effective_amplitude;
-        l++;
-    }
-    l += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
-
-    // 1/n^2
-    for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
-        for (u16 n = 1; n <= levels; n++) {
-            *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) / n / n;
-        }
-        
-        *l *= effective_amplitude;
-        l++;
-    }
-    l += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
-
-    // 1/n^3
-    for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
-        for (u16 n = 1; n <= levels; n++) {
-            *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) / n / n / n;
-        }
-        
-        *l *= effective_amplitude;
-        l++;
-    }
-    l += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
 
 
 
@@ -274,7 +253,7 @@ int main(int argc, char* argv[]){
         }
         l += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
         r += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
-        note *= SEMITONE_MULT;
+        note = pow(note, 1.5);
     }*/
 
 
@@ -284,7 +263,7 @@ int main(int argc, char* argv[]){
 
     // E, F, F#, G, G%, A, A#, B, C, C#, D, D#
 
-    FILE * file = fopen("2c.wav" , "wb");
+    FILE * file = fopen("2e.wav" , "wb");
 
     if (!file)
         return 1;

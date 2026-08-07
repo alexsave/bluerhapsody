@@ -30,7 +30,7 @@ typedef struct DataChunk {
 
 static const u32 SAMPLE_FREQUENCY = 48000;
 static const u16 SAMPLE_BITS = 16;
-static const u16 DURATION_S = 200;
+static const u16 DURATION_S = 15;
 
 static const u8 CHANNEL_COUNT = 2;
 
@@ -138,8 +138,7 @@ void square(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms) {
     }
 }
 
-void triangle(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms) { 
-    u16 levels = 20;
+void triangle(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms, u16 levels) { 
     // triangle
     for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
         for (u16 n = 1; n <= levels; n++) {
@@ -199,7 +198,7 @@ int main(int argc, char* argv[]){
     const u16 GS3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT;
         b*/
 
-    u16 note_duration_ms = 10000;
+    u16 note_duration_ms = 5000;
     u16 rest_duration_ms = 200;
 
 
@@ -209,7 +208,6 @@ int main(int argc, char* argv[]){
     f64* right = calloc(sizeof(f64), NUM_SAMPLES);
 
     // just do A4 for now
-    f32 note = 440.0;
 
     f64* l = left;
     f64* r = right;
@@ -220,42 +218,22 @@ int main(int argc, char* argv[]){
 
     // 100x, 1:24 loses me
     // my hearing is roughly 32Hz to 16.8kHz wow
-    for(u32 j = 0; j < NUM_SAMPLES; j++) {
-        *l = sin((2 * M_PI * j * j) *100 / SAMPLE_FREQUENCY / SAMPLE_FREQUENCY) * effective_amplitude;
-        l++;
-    }
-    l += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
+
+    f32 note = 440.0;
 
 
+    f32 base = note;
+    f32 minor_third = base * SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT;
+    f32 fifth = base * 3.0 / 2.0;//SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT;
+    f32 octave = base * 2.0;
 
-
-
-
-    /*for (u8 i = 0; i < 1; i++) {
-        for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
-            //*l = ((NUM_SAMPLES - (l- left)))*effective_amplitude * sin((note * 2 * M_PI * j) / SAMPLE_FREQUENCY)/ NUM_SAMPLES;
-
-            f32 base = note * 2.0;
-            f32 fifth = note * 3.0;
-            
-            // note that sin(a) + sin(b) = 2 * sin((a+b)/2) * cos((a-b)/2)
-
-            *l = sin((base * 2 * M_PI * j) / SAMPLE_FREQUENCY);
-            *l += sin((fifth * 2 * M_PI * j) / SAMPLE_FREQUENCY);
-            *l *= effective_amplitude;
-            //printf("%lf\n", *l);
-            l++;
-
-            
-
-            //*r = ((r-right))*effective_amplitude * sin((note * 2 * M_PI * j) / SAMPLE_FREQUENCY) / NUM_SAMPLES;
-            //r++;
-        }
-        l += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
-        r += SAMPLE_FREQUENCY * rest_duration_ms / 1000;
-        note = pow(note, 1.5);
-    }*/
-
+    triangle(l, base, effective_amplitude, note_duration_ms, 8);
+    l = l + SAMPLE_FREQUENCY;
+    triangle(l, minor_third, effective_amplitude, note_duration_ms, 8);
+    l = l + SAMPLE_FREQUENCY;
+    triangle(l, fifth, effective_amplitude, note_duration_ms, 8);
+    l = l + SAMPLE_FREQUENCY;
+    triangle(l, octave, effective_amplitude, note_duration_ms, 8);
 
     u8* sampled_data = (u8*)(wav + sizeof(RiffChunk) + sizeof(FormatChunk) + sizeof(DataChunk));
     write_samples(left, left, sampled_data);
@@ -263,7 +241,7 @@ int main(int argc, char* argv[]){
 
     // E, F, F#, G, G%, A, A#, B, C, C#, D, D#
 
-    FILE * file = fopen("2e.wav" , "wb");
+    FILE * file = fopen("m02_additive_chord.wav" , "wb");
 
     if (!file)
         return 1;

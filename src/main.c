@@ -109,7 +109,7 @@ void square(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms) {
     // square
     for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
         for (u16 n = 1; n <= levels; n++) {
-            if (n & 1 == 0) continue;
+            if((n & 1) == 0) continue;
             *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * 4.0 / M_PI / n;
         }
         
@@ -122,10 +122,10 @@ void triangle(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms, u
     // triangle
     for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
         for (u16 n = 1; n <= levels; n++) {
-            if (n & 1 == 0) continue;
+            if((n & 1) == 0) continue;
             
             // at 1 positive, at 3 negative //001 011
-            if (n & 2 == 1) // subtrac
+            if((n & 2) == 1) // subtrac
                 *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * -8.0 / M_PI / M_PI / n / n;
             else // add
                 *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * 8.0 / M_PI / M_PI / n / n;
@@ -187,18 +187,18 @@ int main(int argc, char* argv[]){
         b*/
 
     u16 note_duration_ms = 5000;
-    u16 rest_duration_ms = 200;
+    //u16 rest_duration_ms = 200;
 
 
     // create f64*
 
     f64* left = calloc(sizeof(f64), NUM_SAMPLES);
-    f64* right = calloc(sizeof(f64), NUM_SAMPLES);
+    //f64* right = calloc(sizeof(f64), NUM_SAMPLES);
 
     // just do A4 for now
 
     f64* l = left;
-    f64* r = right;
+    //f64* r = right;
 
     // sin
 
@@ -224,7 +224,7 @@ int main(int argc, char* argv[]){
     triangle(l, octave, effective_amplitude, note_duration_ms, 8);
 
     u8* sampled_data = (u8*)(wav + sizeof(RiffChunk) + sizeof(FormatChunk) + sizeof(DataChunk));
-    write_samples(left, right, sampled_data);
+    write_samples(left, left, sampled_data);
 
 
     // E, F, F#, G, G%, A, A#, B, C, C#, D, D#

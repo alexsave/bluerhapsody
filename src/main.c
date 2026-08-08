@@ -216,7 +216,7 @@ int main(int argc, char* argv[]){
     // 100x, 1:24 loses me
     // my hearing is roughly 32Hz to 16.8kHz wow
 
-    f32 note = 440.0;
+    f32 note = 375.0;
 
 
     f32 base = note;

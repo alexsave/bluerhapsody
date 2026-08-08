@@ -308,6 +308,9 @@ void spectrum(char* filename) {
     while (bin_count < sample_count) {
         bin_count <<= 1;
     }
+    
+    // fuck it 
+    bin_count >>= 4;
 
 
     // IMPORTANT

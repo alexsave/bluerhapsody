@@ -139,17 +139,23 @@ void triangle(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms, u
 
 int main(int argc, char* argv[]){
 
-    if (argc == 3) {
+    if (argc > 2) {
         printf("%s\n", argv[1]);
-        if (strcmp(argv[1], "--meter") == 0)
+        if (strcmp(argv[1], "--meter") == 0){
             meter(argv[2]);
-        return 0;
+            return 0;
+        }
+        if (strcmp(argv[1], "--diff") == 0){
+            printf("deez\n");
+            diff(argv[2], argv[3]);
+            return 0;
+        }
     }
 
     void* wav = write_headers();
 
 
-    f32 gain = -8.0;
+    f32 gain = -12.0;
 
     const f64 DB_MULT = pow(10.0, 1.0/10.0);
     printf("%lf\n", DB_MULT);

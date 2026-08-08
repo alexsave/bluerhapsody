@@ -13,12 +13,10 @@
 WavMetadata get_channels(char* filename, f64** right_ptr, f64** left_ptr) {
     FILE * file = fopen(filename, "rb");
 
-    printf("opening file %s \n", filename);
 
     if (file == NULL)
         exit(1);
 
-    printf("opened file\n");
 
     // obtain file size:
     fseek(file, 0, SEEK_END);
@@ -289,5 +287,109 @@ void diff(char* filename1, char* filename2) {
 
     if(file2_right != 0)
         free(file2_right);
+
+}
+
+// naive DFT
+void spectrum(char* filename) {
+    f64* right_ptr = 0;
+    f64* left_ptr = 0;
+    WavMetadata wm = get_channels(filename, &left_ptr, &right_ptr);
+
+    // so how do we want to do this?
+    // first off let's see if we can get it working for a single DFT over the entire file
+    // how many bins to choose?
+    // I guess make it some 2^n value
+    // this will be clear why when we do FFT
+
+    u32 sample_count = wm.sample_count;
+
+    u32 bin_count = 1;
+    while (bin_count < sample_count) {
+        bin_count <<= 1;
+    }
+
+
+    // IMPORTANT
+    // Hz = bin# * frequency / bin_count;
+
+    // for now we will do O(n^2) DFT
+    // but FFT is MUCH more interesting
+
+    f64* ft_r = calloc(bin_count, sizeof(f64));
+    f64* ft_i = calloc(bin_count, sizeof(f64));
+
+    for (u32 b = 0; b < bin_count; b++) {
+
+        // let's start winding
+        // this is probably the computational hotspot
+        f64 base_angle = b / bin_count;
+
+        // i cringe at the O(n^2) here
+        for (u32 s = 0; s < sample_count; s++) {
+            f64 angle = (u32)(s * b * 2 * M_PI) / bin_count;
+            f64 real = cos(angle);
+            f64 imag = sin(angle);
+
+            f64 amp = left_ptr[s];
+
+            ft_r[b] += real * amp;
+            ft_i[b] += imag * amp;
+            //printf("angle %lf real %lf imag %lf\n", angle, real, imag);
+        }
+
+        //if (b==2)
+        //exit(1);
+        // but it is pretty darn simple
+
+
+        // this is like how much to turn
+        // we chose that 2^20 value, rigth?
+        // therefore if we were to wind the amplitude in such a way that we took a single step each time
+        // then each "turn" would be 1/2^20 of a rotation around the circle
+        // ie 2 * M_PI / 2^20
+        // very small rotation
+        // and a full rotation would be 2^20 samples
+        // which is more than we even have in the wav file
+        // the frequency that that first bin would "detect" would be ... 
+        // well a single circle would have 2^20 samples, but 2^20 samples at 48000 would be 21.8 seconds.
+        // so we would be able to detect a frequency of 1/21.8 Hz. 
+        // while useful for electronics I'm sure, even 10Hz is difficult to hear in audio
+        // we won't skip it for now, but I do want to figure out what the formula will be for bin # -> Hz
+
+        // lets say we skip 3x times that each sample
+        // so first sample is multiplied by "0 degrees", next sample is multipliedby "3 * 2 * M_PI / 2^20" degrees
+        // we would then be detecting a frequency of... 
+        // a single circle would have 2^20 / 3 samples
+        // which is 349525.333333
+        // that many samples is 7.28 seconds
+        // ie 1/7.28 Hz
+        // also useless
+
+        // but now I know that the formula for Hz is 
+        // 1 / ((bin_count / bin#) / frequency)
+        // let me fact check again
+        // 1 / (((2^20) / 3) / 48000)) Hz ~ 1/7 Hz
+        // ok
+        // written cleaner it is
+        // bin# * frequency / bin_count
+
+        // formula for the complex value is e ^ (2 * M_PI * i * bin# / 2^20)?
+        
+        
+
+
+        // oh wait fuck are negative values even allowed here
+        // guess we'll find out
+        //printf("DFT bin %d (%lf Hz) magnitude %lf real %lf imag %lf\n", b, ((f64)(b * wm.frequency) / bin_count), pow(ft_r[b] * ft_r[b] + ft_i[b] * ft_i[b], 0.5), ft_r[b], ft_i[b]);
+        printf("%lf %lf\n", ((f64)((u64)b * wm.frequency) / bin_count), pow(ft_r[b] * ft_r[b] + ft_i[b] * ft_i[b], 0.5));
+        //printf("%lf\n", pow(ft_r[b] * ft_r[b] + ft_i[b] * ft_i[b], 0.5));
+
+    }
+
+    //for (u32 b = 0; b < bin_count; b++) {
+        //printf("DFT bin %d (%lf Hz) real %lf imag %lf\n", b, ((f64)(b * wm.frequency) / bin_count), ft_r[b], ft_i[b]);
+    //}
+    
 
 }

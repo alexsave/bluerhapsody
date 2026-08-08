@@ -140,7 +140,10 @@ void triangle(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms, u
 int main(int argc, char* argv[]){
 
     if (argc > 2) {
-        printf("%s\n", argv[1]);
+        if (strcmp(argv[1], "--spectrum") == 0){
+            spectrum(argv[2]);
+            return 0;
+        }
         if (strcmp(argv[1], "--meter") == 0){
             meter(argv[2]);
             return 0;

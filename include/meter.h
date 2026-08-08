@@ -11,8 +11,8 @@ typedef struct WavMetadata {
 
 // just print out for now
 void meter(char* filename);
-
 void diff(char* filename1, char* filename);
+void spectrum(char* filename);
 
 #endif
 

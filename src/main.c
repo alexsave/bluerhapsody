@@ -99,7 +99,7 @@ void sawtooth(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms ) 
             *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * -2.0 / M_PI / n;
         }
         
-        *l *= effective_amplitude;
+        //*l *= effective_amplitude;
         l++;
     }
 }
@@ -113,7 +113,7 @@ void square(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms) {
             *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * 4.0 / M_PI / n;
         }
         
-        *l *= effective_amplitude;
+        //*l *= effective_amplitude;
         l++;
     }
 }
@@ -125,13 +125,13 @@ void triangle(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms, u
             if((n & 1) == 0) continue;
             
             // at 1 positive, at 3 negative //001 011
-            if((n & 2) == 1) // subtrac
+            if((n & 2) == 2) // subtract
                 *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * -8.0 / M_PI / M_PI / n / n;
             else // add
                 *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * 8.0 / M_PI / M_PI / n / n;
         }
 
-        *l *= effective_amplitude;
+        //*l *= effective_amplitude;
         l++;
     }
 }
@@ -169,7 +169,7 @@ int main(int argc, char* argv[]){
     const f64 AMP_MULT = pow(10.0, 1.0/20.0);
     printf("%lf\n", AMP_MULT);
 
-    f32 effective_amplitude = pow(AMP_MULT, gain);
+    f64 effective_amplitude = pow(AMP_MULT, gain);
 
     // frequency means that it does 440 full rotations through circle in 1 second
     // thus y = sin(2pi*x)
@@ -238,11 +238,34 @@ int main(int argc, char* argv[]){
     l = l + SAMPLE_FREQUENCY;
     triangle(l, octave, effective_amplitude, note_duration_ms, 8);
 
+    // idk, but lets scale it such that the highest peak is at this amplitude
+
+    f64 min = *left;
+    f64 max = *left;
+    f64 value = *left;
+    for (f64 * r = left; r < NUM_SAMPLES; r++) {
+        value = *r;
+        if (value < min)
+            min = value;
+        else if (value > max)
+            max = value;
+    }
+    
+    if (min * -1.0 > max)
+        max = -1.0 * min;
+    
+    
+    f64 scaled_amplitude = effective_amplitude / max;
+
+    // scale entire thing down
+    for (l = left; l < NUM_SAMPLES; l++)
+        *l *= scaled_amplitude;
+
     u8* sampled_data = (u8*)(wav + sizeof(RiffChunk) + sizeof(FormatChunk) + sizeof(DataChunk));
     write_samples(left, left, sampled_data);
 
 
-    // E, F, F#, G, G%, A, A#, B, C, C#, D, D#
+    // E, F, F#, G, G#, A, A#, B, C, C#, D, D#
 
     FILE * file = fopen("m02_additive_chord.wav" , "wb");
 

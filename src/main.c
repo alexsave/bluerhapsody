@@ -160,10 +160,16 @@ int main(int argc, char* argv[]){
 
     f32 gain = -12.0;
 
-    const f64 DB_MULT = pow(10.0, 1.0/10.0);
-    printf("%lf\n", DB_MULT);
+    // an increase of 10 DB means the POWER 10x
+    // if you want to 10x the power, you need to sqrt(10)x the amplitude
+    // 1 db increase is 10^1/10 increase in power, but sqrt(10)^1/10 increase in amplitude
+    // or 10^1/20 increase in amplitude
+    
+    // power is correlated to square of amplitude, thus if you want to 10x
+    const f64 AMP_MULT = pow(10.0, 1.0/20.0);
+    printf("%lf\n", AMP_MULT);
 
-    f32 effective_amplitude = pow(DB_MULT, gain);
+    f32 effective_amplitude = pow(AMP_MULT, gain);
 
     // frequency means that it does 440 full rotations through circle in 1 second
     // thus y = sin(2pi*x)

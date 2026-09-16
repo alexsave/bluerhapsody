@@ -6,6 +6,17 @@
 #include "wav.h"
 
 
+#ifdef __cplusplus
+#define EXTERN extern "C"
+#else
+#define EXTERN
+#endif
+
+u32 int_sqrt(u32 x) {
+    return sqrt(x);
+}
+
+
 // first off lets abstract something like filename -> f64*
 
 // returns sample count

@@ -1,9 +1,22 @@
 "use client";
 
-import {useState} from 'react';
+import { useState, useEffect, useWasm } from 'react';
+
+import createModule from "../wasm/bluerhapsody.mjs";
+
+
 //import { promises as fs } from 'fs';
 export const AudioView = () => {
     const [raw, setRaw] = useState('hi');
+
+    useEffect(() => {
+        createModule().then((Module) => {
+            console.log("Wasm ready", Module);
+            let int_sqrt = Module.cwrap('int_sqrt', 'number', ['number'])
+            console.log(int_sqrt(12));
+            console.log(int_sqrt(28));
+        });
+    }, []);
     // use ref?
     return <div>
         <p>Blue Rhapsody UI</p> 

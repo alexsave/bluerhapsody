@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useWasm } from 'react';
+import { useRef, useState, useEffect, useWasm } from 'react';
 import { ScatterPlot } from './ScatterPlot.tsx';
 
 import createModule from "../wasm/bluerhapsody.mjs";
@@ -24,6 +24,16 @@ export const AudioView = () => {
         });
     }, []);
     // use ref?
+
+    const canvasRef = useRef(null)
+  
+    useEffect(() => {
+        const canvas = canvasRef.current
+        const context = canvas.getContext('2d')
+        //Our first draw
+        context.fillStyle = '#FF0000'
+        context.fillRect(0, 0, 200, context.canvas.height)
+    }, [])
 
     return <div>
         <p>Blue Rhapsody UI</p> 
@@ -73,6 +83,9 @@ export const AudioView = () => {
 
                     const freqMagPtr = Module.ccall("wasm_fft", "number", ["number"], [inBuffer]);
                     
+
+                    // now plot it in a canvas
+
                     console.log(Module.HEAPF64[freqMagPtr/8]);
                     console.log(Module.HEAPF64[freqMagPtr/8 + 1]);
 
@@ -96,7 +109,10 @@ export const AudioView = () => {
         <p>{raw.byteLength}</p>
         <p>{JSON.stringify(lValues.slice(0,100))}</p>
         <p>{data.length}</p>
-        <ScatterPlot width={1000} height={600} data={data.slice(frequency*2,frequency*2+100)}/>
+        <ScatterPlot width={1000} height={600} data={data.slice(frequency*0,frequency*0+100)}/>
+  
+        <canvas ref={canvasRef}/>
+
 
     </div>;
 

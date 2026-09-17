@@ -9,6 +9,10 @@ import createModule from "../wasm/bluerhapsody.mjs";
 export const AudioView = () => {
     const [raw, setRaw] = useState('hi');
 
+    const [lValues, setLValues] = useState([]);
+    const [frequency, setFrequency] = useState(1);
+    const [sampleCount, setSampleCount] = useState(1);
+
     const [Module, setModule] = useState(null);
 
     useEffect(() => {
@@ -33,18 +37,9 @@ export const AudioView = () => {
 
                     const length = localRaw.byteLength;
 
-                    console.log(length);
-                    console.log((new Uint8Array(localRaw))[0]);
-
                     // in
                     const inBuffer = Module._malloc(length);
                     Module.HEAPU8.set(new Uint8Array(localRaw), inBuffer);
-
-                    //result. size idk
-                    //const lBuffer = Module._malloc(length);
-                    //Module.HEAPU8.set(localRaw, lBuffer);
-                    //const rBuffer = Module._malloc(length);
-                    //Module.HEAPU8.set(localRaw, rBuffer);
 
                     // out
                     // maybe instead of sample count, we should allocate WavMetadata followed by samples, and return a pointer to that
@@ -55,7 +50,9 @@ export const AudioView = () => {
                         [inBuffer]);
 
                     const sampleCount = Module.HEAPU32[resultPointer/4];
+                    setSampleCount(sampleCount);
                     const frequency = Module.HEAPU32[resultPointer/4 + 1];
+                    setFrequency(frequency);
                     const lPtr = Module.HEAPU32[resultPointer/4 + 2];
                     const rPtr = Module.HEAPU32[resultPointer/4 + 3];
 
@@ -67,27 +64,13 @@ export const AudioView = () => {
                     for (let i = 0; i < sampleCount; i++) {
                         resultFlatArray.push(Module.HEAPF64[lPtr/8 + i]);
                     }
-
-                    console.log(resultFlatArray[0]);
-                    console.log(resultFlatArray[1]);
-                    console.log(resultFlatArray[2]);
-                    console.log(resultFlatArray[3]);
-                    console.log(resultFlatArray[4]);
-                    console.log(resultFlatArray[5]);
-                    console.log(resultFlatArray[6]);
-                    console.log(resultFlatArray[7]);
+                    
+                    // pray
+                    setLValues(resultFlatArray);;
 
                     Module._free(inBuffer);
-
-
-                    //something in these lines
                     Module._free(lPtr);
                     Module._free(rPtr);
-
-
-                    //let int_sqrt = Module.cwrap('int_sqrt', 'number', ['number'])
-                    //console.log(int_sqrt(12));
-                    //console.log(int_sqrt(28));
 
                 }
 
@@ -95,6 +78,7 @@ export const AudioView = () => {
             }}
         />
         <p>{raw.byteLength}</p>
+        <p>{JSON.stringify(lValues.slice(0,100))}</p>
 
     </div>;
 

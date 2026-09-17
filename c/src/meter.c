@@ -186,15 +186,18 @@ WavMetadata get_channels(char* filename, f64** right_ptr, f64** left_ptr) {
 }
 
 /// u32 is smaple count
-u32 wasm_get_channels(u8* buffer, f64* left_buffer, f64* right_buffer) {
+WasmChannels* wasm_get_channels(u8* buffer) {
+    // the allocations will be freed by JS... i hope
+
+    WasmChannels * wasm_channels = malloc(sizeof(WasmChannels));
+    
     FormatChunk* fc = (FormatChunk*)(buffer + sizeof(RiffChunk));
 
     u16 channel_count = fc->nbrChannels;
     u32 frequency = fc->frequency;
     u16 sample_bits = fc->bitsPerSample;
 
-    printf("sample bits %d channel # %d\n", sample_bits, channel_count);
-    exit(1);
+    //exit(1);
 
     DataChunk* dc = (DataChunk*)(buffer + sizeof(RiffChunk) + sizeof(FormatChunk));
 
@@ -204,9 +207,19 @@ u32 wasm_get_channels(u8* buffer, f64* left_buffer, f64* right_buffer) {
     // per channel
     u32 sample_count = data_bytes / (sample_bits / 8) / channel_count;
 
+    printf("sample bits %d channel # %d sample_count %d\n", sample_bits, channel_count, sample_count);
+
+    f64* left_buffer = malloc(sample_count * sizeof(f64));
+    f64* right_buffer = malloc(sample_count * sizeof(f64));
+
+    wasm_channels->sample_count = sample_count;
+    wasm_channels->frequency = frequency;
+    wasm_channels->left_channel = left_buffer;
+    wasm_channels->right_channel = right_buffer;
+    
     copy_samples(samples, sample_count, fc, left_buffer, right_buffer);
 
-    return sample_count;
+    return wasm_channels;
 }
 
 void volume_stats(f64* stream, u32 sample_count, u32 frequency) {

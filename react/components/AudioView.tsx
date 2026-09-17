@@ -14,13 +14,10 @@ export const AudioView = () => {
     useEffect(() => {
         createModule().then((Module) => {
             setModule(Module);
-            //console.log("Wasm ready", Module);
-            //let int_sqrt = Module.cwrap('int_sqrt', 'number', ['number'])
-            //console.log(int_sqrt(12));
-            //console.log(int_sqrt(28));
         });
     }, []);
     // use ref?
+
     return <div>
         <p>Blue Rhapsody UI</p> 
         <input 
@@ -44,22 +41,31 @@ export const AudioView = () => {
                     Module.HEAPU8.set(new Uint8Array(localRaw), inBuffer);
 
                     //result. size idk
-                    const lBuffer = Module._malloc(length);
+                    //const lBuffer = Module._malloc(length);
                     //Module.HEAPU8.set(localRaw, lBuffer);
-                    const rBuffer = Module._malloc(length);
+                    //const rBuffer = Module._malloc(length);
                     //Module.HEAPU8.set(localRaw, rBuffer);
 
                     // out
-                    const sampleCount = Module.ccall(
+                    // maybe instead of sample count, we should allocate WavMetadata followed by samples, and return a pointer to that
+                    const resultPointer = Module.ccall(
                         "wasm_get_channels",
                         "number",
-                        ["number", "number", "number"],
-                        [inBuffer, lBuffer, rBuffer]);
+                        ["number"],
+                        [inBuffer]);
+
+                    const sampleCount = Module.HEAPU32[resultPointer/4];
+                    const frequency = Module.HEAPU32[resultPointer/4 + 1];
+                    const lPtr = Module.HEAPU32[resultPointer/4 + 2];
+                    const rPtr = Module.HEAPU32[resultPointer/4 + 3];
+
+                    const left = Module.HEAPF64[lPtr/8];
+                    const right = Module.HEAPF64[lPtr/8];
 
                     // its passed as just length of memory, but we will treat it as a f64*
                     const resultFlatArray = [];
                     for (let i = 0; i < sampleCount; i++) {
-                        resultFlatArray.push(Module.HEAPF64[lBuffer/8 + i]);
+                        resultFlatArray.push(Module.HEAPF64[lPtr/8 + i]);
                     }
 
                     console.log(resultFlatArray[0]);
@@ -72,9 +78,11 @@ export const AudioView = () => {
                     console.log(resultFlatArray[7]);
 
                     Module._free(inBuffer);
-                    Module._free(outBuffer);
 
 
+                    //something in these lines
+                    Module._free(lPtr);
+                    Module._free(rPtr);
 
 
                     //let int_sqrt = Module.cwrap('int_sqrt', 'number', ['number'])

@@ -238,13 +238,13 @@ int main(int argc, char* argv[]){
     f32 fifth = base * 3.0 / 2.0;//SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT;
     f32 octave = base * 2.0;
 
-    triangle(l, base, effective_amplitude, note_duration_ms, 8);
-    l = l + SAMPLE_FREQUENCY;
-    triangle(l, minor_third, effective_amplitude, note_duration_ms, 8);
-    l = l + SAMPLE_FREQUENCY;
-    triangle(l, fifth, effective_amplitude, note_duration_ms, 8);
-    l = l + SAMPLE_FREQUENCY;
-    triangle(l, octave, effective_amplitude, note_duration_ms, 8);
+    triangle(l, base, effective_amplitude, note_duration_ms, 4);
+    //l = l + SAMPLE_FREQUENCY;
+    //triangle(l, minor_third, effective_amplitude, note_duration_ms, 8);
+    //l = l + SAMPLE_FREQUENCY;
+    //triangle(l, fifth, effective_amplitude, note_duration_ms, 8);
+    //l = l + SAMPLE_FREQUENCY;
+    //triangle(l, octave, effective_amplitude, note_duration_ms, 8);
 
 
     // idk, but lets scale it such that the highest peak is at this amplitude

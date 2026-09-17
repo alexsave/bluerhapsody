@@ -69,6 +69,16 @@ export const AudioView = () => {
                     }
 
                     setData(resultFlatArray.map((s,i) => ({x: i/frequency, y: s})));
+
+
+                    const freqMagPtr = Module.ccall("wasm_fft", "number", ["number"], [inBuffer]);
+                    
+                    console.log(Module.HEAPF64[freqMagPtr/8]);
+                    console.log(Module.HEAPF64[freqMagPtr/8 + 1]);
+
+                    console.log(Module.HEAPF64[freqMagPtr/8 + 2]);
+                    console.log(Module.HEAPF64[freqMagPtr/8 + 3]);
+
                     
                     // pray
                     //setLValues(resultFlatArray);;
@@ -76,6 +86,7 @@ export const AudioView = () => {
                     Module._free(inBuffer);
                     Module._free(lPtr);
                     Module._free(rPtr);
+                    Module._free(freqMagPtr);
 
                 }
 

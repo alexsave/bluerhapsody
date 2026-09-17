@@ -8,7 +8,8 @@ typedef struct Cpx {
     f64 im;
 } Cpx;
 
-void fast(char* filename);
+Cpx* fast(char* filename);
+Cpx* fft(f64* channel, u32 sample_count, u32* bin_count);
 
 #endif
 

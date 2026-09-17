@@ -2,6 +2,7 @@
 #define METER_H
 
 #include "types.h"
+#include "wav.h"
 
 // all we really need when reading
 typedef struct WavMetadata {
@@ -22,6 +23,7 @@ void meter(char* filename);
 void diff(char* filename1, char* filename);
 void spectrum(char* filename);
 WavMetadata get_channels(char* filename, f64** right_ptr, f64** left_ptr);
+void copy_samples(u8* samples, u32 sample_count, FormatChunk* fc, f64* left, f64* right);
 
 #endif
 

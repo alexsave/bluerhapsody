@@ -1,21 +1,29 @@
 OBJDIR := out
 OUTOBJS := $(addprefix $(OBJDIR)/, meter.o fft.o)
 
+WOBJDIR := wout
+WOUTOBJS := $(addprefix $(WOBJDIR)/, meter.o fft.o)
+
 FLAGS := -g -Wunused-function -Wunused-label -Wunused-value -Wunused-variable -Wunused-parameter -Wunused-but-set-parameter -ferror-limit=100
 
 out/%.o: src/%.c
 	gcc $(FLAGS) -c -Iinclude $< -o $@
 
-out/%.o: src/strategy/%.c
-	gcc $(FLAGS) -c -Iinclude $< -o $@
+wout/%.o: src/%.c
+	emcc -c -Iinclude $< -o $@
 
 $(OUTOBJS): | $(OBJDIR)
 
 $(OBJDIR):
 	mkdir $(OBJDIR)
 
+$(WOUTOBJS): | $(WOBJDIR)
+
+$(WOBJDIR):
+	mkdir $(WOBJDIR)
+
 clean:
-	rm -rf out
+	rm -rf out wout
 
 
 # test relies on out
@@ -27,4 +35,7 @@ main: clean $(OUTOBJS)
 
 debug: clean $(OUTOBJS)
 	gcc $(FLAGS) -I include/ src/main.c $(OUTOBJS) -o ./bluerhapsody && ./bluerhapsody
+
+wasm: clean $(WOUTOBJS)
+	emcc -g -Wunused-function -Wunused-label -Wunused-value -Wunused-variable -Wunused-parameter -Wunused-but-set-parameter -ferror-limit=100 -Iinclude src/wasm.c $(WOUTOBJS) -o bluerhapsody.mjs -sEXPORTED_FUNCTIONS=_wasm_get_channels,_wasm_fft,_malloc,_free -sEXPORTED_RUNTIME_METHODS=ccall,cwrap,HEAPU8,HEAPU32,HEAPF64 -sALLOW_MEMORY_GROWTH -sMODULARIZE -sEXPORT_NAME='createModule' -sENVIRONMENT='web' -sSINGLE_FILE=1 && mv bluerhapsody.mjs ../react/wasm
 

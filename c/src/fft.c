@@ -17,34 +17,24 @@ u32 bit_inverse(u32 index, u8 size) {
     return inverse;
 }
 
-void fast(char* filename) {
-    f64* right_ptr = 0;
-    f64* left_ptr = 0;
-    WavMetadata wm = get_channels(filename, &left_ptr, &right_ptr);
 
-    // so how do we want to do this?
-    // first off let's see if we can get it working for a single DFT over the entire file
-    // how many bins to choose?
-    // I guess make it some 2^n value
-    // this will be clear why when we do FFT 
-
-    u32 sample_count = wm.sample_count;
+Cpx* fft(f64* channel, u32 sample_count, u32* bin_count) {
 
     u8 log_bin_count = 0;
 
-    u32 bin_count = 1;
-    while (bin_count < sample_count) {
-        bin_count <<= 1;
+    *bin_count = 1;
+    while (*bin_count < sample_count) {
+        *bin_count = *bin_count * 2;
         log_bin_count++;
     } 
-    printf("bin count %d, log is %d\n", bin_count, log_bin_count);
+    printf("bin count %d, log is %d\n", *bin_count, log_bin_count);
 
 
     // this alternates real and imaginary for cache lines
-    Cpx* array = calloc(bin_count, sizeof(Cpx));
+    Cpx* array = calloc(*bin_count, sizeof(Cpx));
 
     for (u32 i = 0; i < sample_count; i++) {
-        array[i].re = left_ptr[i];
+        array[i].re = channel[i];
     }
 
 
@@ -62,7 +52,7 @@ void fast(char* filename) {
         //printf("i %d and inverse %d\n", i, inverse);
         if (inverse > i) {
             //swap
-            // will this work with struct? idk
+            // will this work with struct? idk;
             temp = array[i];
             array[i] = array[inverse];
             array[inverse] = temp;
@@ -73,10 +63,10 @@ void fast(char* filename) {
     // pre calcualte rotations
     // max stride will be bin_count/2
     // this COULD be lazy init
-    Cpx* rots = calloc(bin_count >> 1, sizeof(Cpx));
+    Cpx* rots = calloc(*bin_count >> 1, sizeof(Cpx));
 
-    for (u32 i = 0; i < (bin_count >> 1); i++) {
-        f64 angle = i * M_PI / (bin_count >> 1);
+    for (u32 i = 0; i < (*bin_count >> 1); i++) {
+        f64 angle = i * M_PI / (*bin_count >> 1);
 
         rots[i].re = cos(angle);
         rots[i].im = sin(angle);
@@ -88,12 +78,12 @@ void fast(char* filename) {
 
     u32 stride = 1;
 
-    while (stride < bin_count) {
+    while (stride < *bin_count) {
 
-        u32 rotation_index_step = (bin_count >> 1) / stride;
+        u32 rotation_index_step = (*bin_count >> 1) / stride;
 
         u32 run = 0;
-        while (run < bin_count) {
+        while (run < *bin_count) {
 
             for (u32 substep = 0; substep < stride; substep++) {
 
@@ -109,11 +99,11 @@ void fast(char* filename) {
 
                 Cpx a = array[run];
             
-                array[run].re = a.re + b.re;
-                array[run].im = a.im + b.im;
+                array[run].re = a.re + rot_b.re;
+                array[run].im = a.im + rot_b.im;
                 
-                array[run + stride].re = a.re - b.re;
-                array[run + stride].im = a.im - b.im;
+                array[run + stride].re = a.re - rot_b.re;
+                array[run + stride].im = a.im - rot_b.im;
             
                 run++;
             }
@@ -127,15 +117,32 @@ void fast(char* filename) {
 
     // Hz = bin# * frequency / bin_count;
 
-    for (u32 i = 0; i < bin_count; i++) {
-        // print out magnitude? (a+bi) => (a*a + b*b)
-        //printf("%lfHz: %lf\n", (f64) wm.frequency) , array[i].re * array[i].re + array[i].im * array[i].im);
-        printf("%lfHz: %lf\n", ((f64)i * (f64)wm.frequency) / (f64)bin_count, array[i].re * array[i].re + array[i].im * array[i].im);
-    }
+    free(rots);
+
     
     //wm.frequency
     //printf("%lf %lf\n", ((f64)((u64)b * wm.frequency) / bin_count), pow(ft_r[b] * ft_r[b] + ft_i[b] * ft_i[b], 0.5));
 
+    return array;
+}
 
+Cpx* fast(char* filename) {
+    f64* right_ptr = 0;
+    f64* left_ptr = 0;
+    WavMetadata wm = get_channels(filename, &left_ptr, &right_ptr);
+
+    // so how do we want to do this?
+    // first off let's see if we can get it working for a single DFT over the entire file
+    // how many bins to choose?
+    // I guess make it some 2^n value
+    // this will be clear why when we do FFT 
+    u32 bin_count;
+
+    Cpx* array = fft(left_ptr, wm.sample_count, &bin_count);
+    for (u32 i = 0; i < bin_count; i++) {
+        // print out magnitude? (a+bi) => (a*a + b*b)
+        printf("%lfHz: %lf\n", ((f64)i * (f64)wm.frequency) / (f64)bin_count, array[i].re * array[i].re + array[i].im * array[i].im);
+    }
+    return array;
 }
 

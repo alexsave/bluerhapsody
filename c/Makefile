@@ -1,5 +1,5 @@
 OBJDIR := out
-OUTOBJS := $(addprefix $(OBJDIR)/, meter.o)
+OUTOBJS := $(addprefix $(OBJDIR)/, meter.o fft.o)
 
 FLAGS := -g -Wunused-function -Wunused-label -Wunused-value -Wunused-variable -Wunused-parameter -Wunused-but-set-parameter -ferror-limit=100
 

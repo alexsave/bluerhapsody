@@ -13,7 +13,6 @@
 #endif
 
 
-
 void copy_samples(u8* samples, u32 sample_count, FormatChunk* fc, f64* left, f64* right) {
     u16 channel_count = fc->nbrChannels;
     u16 sample_bits = fc->bitsPerSample;
@@ -445,6 +444,6 @@ void spectrum(char* filename) {
     //for (u32 b = 0; b < bin_count; b++) {
         //printf("DFT bin %d (%lf Hz) real %lf imag %lf\n", b, ((f64)(b * wm.frequency) / bin_count), ft_r[b], ft_i[b]);
     //}
-    
 
 }
+

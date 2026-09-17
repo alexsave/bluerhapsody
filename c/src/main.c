@@ -8,6 +8,8 @@
 #include "meter.h"
 #include "wav.h"
 
+#include "fft.h"
+
 static const u32 SAMPLE_FREQUENCY = 48000;
 static const u16 SAMPLE_BITS = 16;
 static const u16 DURATION_S = 15;
@@ -22,11 +24,6 @@ static const u32 REAL_FILE_SIZE = sizeof(RiffChunk) + sizeof(FormatChunk) + size
 // pass in f64s, let this turn it into whatever
 void write_samples(f64* left, f64* right, u8* out) {
     // lets just look at that same spot as in the react ui
-    for(f64 * r = left + (2 * SAMPLE_FREQUENCY); r < left + (2 * SAMPLE_FREQUENCY + 100); r++) {
-        i16 sample_amplitude = (*r) * (1 << 15);
-        printf("%hd\n", sample_amplitude);
-        printf("%f\n", (*r)*(1<<15));
-    }
     if (SAMPLE_BITS == 16) {
         for (u32 i = 0; i < NUM_SAMPLES; i++) {
             i16 sample_amplitude = (*left) * (1 << 15);
@@ -146,6 +143,11 @@ void triangle(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms, u
 int main(int argc, char* argv[]){
 
     if (argc > 2) {
+        if (strcmp(argv[1], "--fft") == 0){
+            fast(argv[2]);
+            return 0;
+        }
+
         if (strcmp(argv[1], "--spectrum") == 0){
             spectrum(argv[2]);
             return 0;
@@ -270,12 +272,6 @@ int main(int argc, char* argv[]){
     for (l = left; l < left + NUM_SAMPLES; l++)
         *l *= scaled_amplitude;
 
-    // lets just look at that same spot as in the react ui
-    for(f64 * r = left + (2 * SAMPLE_FREQUENCY); r < left + (2 * SAMPLE_FREQUENCY + 100); r++) {
-        printf("%f\n", *r);
-        //*r *= scaled_amplitude;
-        ////printf("%f\n", *r);
-    }
 
     u8* sampled_data = (u8*)(wav + sizeof(RiffChunk) + sizeof(FormatChunk) + sizeof(DataChunk));
     // DO NOT pass values not between -1 and 1 to this

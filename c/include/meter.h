@@ -21,6 +21,7 @@ typedef struct WasmChannels {
 void meter(char* filename);
 void diff(char* filename1, char* filename);
 void spectrum(char* filename);
+WavMetadata get_channels(char* filename, f64** right_ptr, f64** left_ptr);
 
 #endif
 

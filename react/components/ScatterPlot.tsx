@@ -7,6 +7,7 @@ type ScatterPlotProps = {
     data: { x: number; y: number }[];
 };
 
+// TODO actually make this draggable and zoomable
 export const ScatterPlot = ({ width, height, data }: ScatterPlotProps) => {
     const marginTop = 20;
     const marginRight = 20;

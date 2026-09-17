@@ -21,6 +21,12 @@ static const u32 REAL_FILE_SIZE = sizeof(RiffChunk) + sizeof(FormatChunk) + size
 // left will be mono in case of channel count == 1
 // pass in f64s, let this turn it into whatever
 void write_samples(f64* left, f64* right, u8* out) {
+    // lets just look at that same spot as in the react ui
+    for(f64 * r = left + (2 * SAMPLE_FREQUENCY); r < left + (2 * SAMPLE_FREQUENCY + 100); r++) {
+        i16 sample_amplitude = (*r) * (1 << 15);
+        printf("%hd\n", sample_amplitude);
+        printf("%f\n", (*r)*(1<<15));
+    }
     if (SAMPLE_BITS == 16) {
         for (u32 i = 0; i < NUM_SAMPLES; i++) {
             i16 sample_amplitude = (*left) * (1 << 15);
@@ -238,30 +244,41 @@ int main(int argc, char* argv[]){
     l = l + SAMPLE_FREQUENCY;
     triangle(l, octave, effective_amplitude, note_duration_ms, 8);
 
+
     // idk, but lets scale it such that the highest peak is at this amplitude
 
     f64 min = *left;
     f64 max = *left;
     f64 value = *left;
-    for (f64 * r = left; r < NUM_SAMPLES; r++) {
+    for (f64 * r = left; r < left + NUM_SAMPLES; r++) {
         value = *r;
         if (value < min)
             min = value;
         else if (value > max)
             max = value;
     }
+    printf("min %f max %f\n", min, max);
     
     if (min * -1.0 > max)
         max = -1.0 * min;
     
     
     f64 scaled_amplitude = effective_amplitude / max;
+    printf("scaled amp %f\n", scaled_amplitude);
 
     // scale entire thing down
-    for (l = left; l < NUM_SAMPLES; l++)
+    for (l = left; l < left + NUM_SAMPLES; l++)
         *l *= scaled_amplitude;
 
+    // lets just look at that same spot as in the react ui
+    for(f64 * r = left + (2 * SAMPLE_FREQUENCY); r < left + (2 * SAMPLE_FREQUENCY + 100); r++) {
+        printf("%f\n", *r);
+        //*r *= scaled_amplitude;
+        ////printf("%f\n", *r);
+    }
+
     u8* sampled_data = (u8*)(wav + sizeof(RiffChunk) + sizeof(FormatChunk) + sizeof(DataChunk));
+    // DO NOT pass values not between -1 and 1 to this
     write_samples(left, left, sampled_data);
 
 

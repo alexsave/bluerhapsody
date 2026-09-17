@@ -85,7 +85,7 @@ export const AudioView = () => {
         <p>{raw.byteLength}</p>
         <p>{JSON.stringify(lValues.slice(0,100))}</p>
         <p>{data.length}</p>
-        <ScatterPlot width={600} height={400} data={data.slice(0,100)}/>
+        <ScatterPlot width={1000} height={600} data={data.slice(frequency*2,frequency*2+100)}/>
 
     </div>;
 

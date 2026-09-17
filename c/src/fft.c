@@ -47,7 +47,6 @@ void fast(char* filename) {
         array[i].re = left_ptr[i];
     }
 
-    // Hz = bin# * frequency / bin_count;
 
 //2^20 bins, 1 # 48000
     //48000/2^20
@@ -81,10 +80,8 @@ void fast(char* filename) {
 
         rots[i].re = cos(angle);
         rots[i].im = sin(angle);
-        printf("angle %lf complex %lf+%lfi\n", angle, rots[i].re, rots[i].im);
+        //printf("angle %lf complex %lf+%lfi\n", angle, rots[i].re, rots[i].im);
     }
-
-    exit(1);
 
 
     //f64 amp = left_ptr[s];
@@ -93,57 +90,31 @@ void fast(char* filename) {
 
     while (stride < bin_count) {
 
+        u32 rotation_index_step = (bin_count >> 1) / stride;
+
         u32 run = 0;
         while (run < bin_count) {
 
             for (u32 substep = 0; substep < stride; substep++) {
 
-                //Cpx rot = ?
-                /*
-                    stride 1, substep 0
-                    (e ^  (i * pi / 1) ) ^ 0
+                // use precomputed
+                Cpx rot = rots[rotation_index_step * substep];
 
-                    stride 2, 
-                        substep 0 and 
-                            (e ^  (i * pi / 2)) ^ 0
-                        substep 1
-                            (e ^  (i * pi / 2)) ^ 1
-                    stride 4
-                        substep 1
-                            (e ^  (i * pi / 4)) ^ 1
+                Cpx b = array[run + stride];
+                // (a+bi)(c+di)
 
-                    cool but what is angle
-                    45 = f( 4, 1)
-                    PI / 4 * 1
-                    angle = substep * PI / stride
-                    
-                    
-                */
-
-                f64 angle = substep * M_PI / stride;
-                printf("angle %d\n", angle);
-
-                Cpx rot = { .re = cos(angle), .im = sin(angle)};
-
-                /*
-                lets say we have all 2^20 rotations predefined
-                stride 4 substep 1
-                itll be at index 2^20/4 * 1
-
-                but what will be max stride? actually 2^19
-                */
-
-
+                // a * c + a * d * i + b * i * c + d * i * b * i
+                // (a * c - b * d) +  (a * d + b * c) * i
+                Cpx rot_b = {.re = b.re*rot.re - b.im*rot.im , .im = b.im*rot.re + b.re*rot.im};
 
                 Cpx a = array[run];
-                Cpx b = array[run];
-
-                //array[run].re = a.re + 
-                //array[run].im = a.im + 
-
-                //array[run + stride].re = a.re -
-                //array[run + stride].im = a.im -
+            
+                array[run].re = a.re + b.re;
+                array[run].im = a.im + b.im;
                 
+                array[run + stride].re = a.re - b.re;
+                array[run + stride].im = a.im - b.im;
+            
                 run++;
             }
 
@@ -153,6 +124,17 @@ void fast(char* filename) {
         // double stride
         stride <<= 1;
     }
+
+    // Hz = bin# * frequency / bin_count;
+
+    for (u32 i = 0; i < bin_count; i++) {
+        // print out magnitude? (a+bi) => (a*a + b*b)
+        //printf("%lfHz: %lf\n", (f64) wm.frequency) , array[i].re * array[i].re + array[i].im * array[i].im);
+        printf("%lfHz: %lf\n", ((f64)i * (f64)wm.frequency) / (f64)bin_count, array[i].re * array[i].re + array[i].im * array[i].im);
+    }
+    
+    //wm.frequency
+    //printf("%lf %lf\n", ((f64)((u64)b * wm.frequency) / bin_count), pow(ft_r[b] * ft_r[b] + ft_i[b] * ft_i[b], 0.5));
 
 
 }

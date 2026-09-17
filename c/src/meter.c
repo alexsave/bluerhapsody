@@ -12,60 +12,11 @@
 #define EXTERN
 #endif
 
-u32 int_sqrt(u32 x) {
-    return sqrt(x);
-}
 
 
-// first off lets abstract something like filename -> f64*
-
-// returns sample count
-// might need to return frequency or something later
-WavMetadata get_channels(char* filename, f64** right_ptr, f64** left_ptr) {
-    FILE * file = fopen(filename, "rb");
-
-
-    if (file == NULL)
-        exit(1);
-
-
-    // obtain file size:
-    fseek(file, 0, SEEK_END);
-    u32 size = ftell(file);
-    rewind(file);
-
-    u8* buffer = (u8*)malloc(sizeof(u8) * size);
-    if (buffer == NULL) 
-        exit(2);
-
-    // copy the file into the buffer:
-    u32 result = fread(buffer, 1, size, file);
-    if (result != size) 
-        exit(3);
-
-
-    FormatChunk* fc = (FormatChunk*)(buffer + sizeof(RiffChunk));
-
+void copy_samples(u8* samples, u32 sample_count, FormatChunk* fc, f64* left, f64* right) {
     u16 channel_count = fc->nbrChannels;
-    u32 frequency = fc->frequency;
     u16 sample_bits = fc->bitsPerSample;
-
-    DataChunk* dc = (DataChunk*)(buffer + sizeof(RiffChunk) + sizeof(FormatChunk));
-
-    u32 data_bytes = dc->dataSize;
-    u8* samples = dc->sampledData;
-
-    // normalize to -1.0 - 1.0?
-
-    // for now just handle the 2 channel 16 bit
-
-    // per channel
-    u32 sample_count = data_bytes / (sample_bits / 8) / channel_count;
-    f64* left = malloc(sample_count * sizeof(f64));
-    f64* right = 0;
-
-    if (channel_count == 2)
-        right = malloc(sample_count * sizeof(f64));
 
     f64* l = left;
     f64* r = right;
@@ -169,6 +120,60 @@ WavMetadata get_channels(char* filename, f64** right_ptr, f64** left_ptr) {
         }
     }
 
+
+}
+
+// first off lets abstract something like filename -> f64*
+
+// returns sample count
+// might need to return frequency or something later
+WavMetadata get_channels(char* filename, f64** right_ptr, f64** left_ptr) {
+    FILE * file = fopen(filename, "rb");
+
+    if (file == NULL)
+        exit(1);
+
+
+    // obtain file size:
+    fseek(file, 0, SEEK_END);
+    u32 size = ftell(file);
+    rewind(file);
+
+    u8* buffer = (u8*)malloc(sizeof(u8) * size);
+    if (buffer == NULL) 
+        exit(2);
+
+    // copy the file into the buffer:
+    u32 result = fread(buffer, 1, size, file);
+    if (result != size) 
+        exit(3);
+
+
+    FormatChunk* fc = (FormatChunk*)(buffer + sizeof(RiffChunk));
+
+    u16 channel_count = fc->nbrChannels;
+    u32 frequency = fc->frequency;
+    u16 sample_bits = fc->bitsPerSample;
+
+    DataChunk* dc = (DataChunk*)(buffer + sizeof(RiffChunk) + sizeof(FormatChunk));
+
+    u32 data_bytes = dc->dataSize;
+    u8* samples = dc->sampledData;
+
+    // normalize to -1.0 - 1.0?
+
+    // for now just handle the 2 channel 16 bit
+
+    // per channel
+    u32 sample_count = data_bytes / (sample_bits / 8) / channel_count;
+    f64* left = malloc(sample_count * sizeof(f64));
+    f64* right = 0;
+
+    if (channel_count == 2)
+        right = malloc(sample_count * sizeof(f64));
+
+    copy_samples(samples, sample_count, fc, left, right);
+
     *right_ptr = right;
     *left_ptr = left;
 
@@ -180,6 +185,29 @@ WavMetadata get_channels(char* filename, f64** right_ptr, f64** left_ptr) {
     return wm;
 }
 
+/// u32 is smaple count
+u32 wasm_get_channels(u8* buffer, f64* left_buffer, f64* right_buffer) {
+    FormatChunk* fc = (FormatChunk*)(buffer + sizeof(RiffChunk));
+
+    u16 channel_count = fc->nbrChannels;
+    u32 frequency = fc->frequency;
+    u16 sample_bits = fc->bitsPerSample;
+
+    printf("sample bits %d channel # %d\n", sample_bits, channel_count);
+    exit(1);
+
+    DataChunk* dc = (DataChunk*)(buffer + sizeof(RiffChunk) + sizeof(FormatChunk));
+
+    u32 data_bytes = dc->dataSize;
+    u8* samples = dc->sampledData;
+
+    // per channel
+    u32 sample_count = data_bytes / (sample_bits / 8) / channel_count;
+
+    copy_samples(samples, sample_count, fc, left_buffer, right_buffer);
+
+    return sample_count;
+}
 
 void volume_stats(f64* stream, u32 sample_count, u32 frequency) {
     f64* l = stream;

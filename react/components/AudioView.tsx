@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useWasm } from 'react';
+import { ScatterPlot } from './ScatterPlot.tsx';
 
 import createModule from "../wasm/bluerhapsody.mjs";
 
@@ -14,6 +15,8 @@ export const AudioView = () => {
     const [sampleCount, setSampleCount] = useState(1);
 
     const [Module, setModule] = useState(null);
+
+    const [data, setData] = useState([]);
 
     useEffect(() => {
         createModule().then((Module) => {
@@ -64,9 +67,11 @@ export const AudioView = () => {
                     for (let i = 0; i < sampleCount; i++) {
                         resultFlatArray.push(Module.HEAPF64[lPtr/8 + i]);
                     }
+
+                    setData(resultFlatArray.map((s,i) => ({x: i/frequency, y: s})));
                     
                     // pray
-                    setLValues(resultFlatArray);;
+                    //setLValues(resultFlatArray);;
 
                     Module._free(inBuffer);
                     Module._free(lPtr);
@@ -79,6 +84,8 @@ export const AudioView = () => {
         />
         <p>{raw.byteLength}</p>
         <p>{JSON.stringify(lValues.slice(0,100))}</p>
+        <p>{data.length}</p>
+        <ScatterPlot width={600} height={400} data={data.slice(0,100)}/>
 
     </div>;
 

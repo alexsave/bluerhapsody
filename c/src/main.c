@@ -120,7 +120,7 @@ void square(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms, u16
     }
 }
 
-void triangle(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms, u16 levels) { 
+void triangle(f64* l, f32 note, u16 note_duration_ms, u16 levels) { 
     // triangle
     for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
         for (u16 n = 1; n <= levels; n++) {
@@ -133,7 +133,6 @@ void triangle(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms, u
                 *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY - 1) * 8.0 / M_PI / M_PI / n / n;
         }
 
-        //*l *= effective_amplitude;
         l++;
     }
 }
@@ -145,6 +144,42 @@ void sine(f64* l, f32 note, u16 note_duration_ms) {
         l++;
     }
 
+}
+
+// all in ms
+// return status
+u8 adsr(f64* l, u16 key_hold_ms, f64 attack_ms, f64 decay_ms, f64 sustain_ratio, f64 release_ms) {
+    if (attack_ms + decay_ms > key_hold_ms)
+        return 1;
+    
+    u32 attack_samples = SAMPLE_FREQUENCY * attack_ms / 1000;
+    u32 decay_samples = SAMPLE_FREQUENCY * decay_ms / 1000;
+
+    u32 hold_samples = SAMPLE_FREQUENCY * key_hold_ms / 1000;
+    f64* release_point = l + hold_samples;
+
+    for (u32 i = 0; i < attack_samples; i++) {
+        *l *= ((f64)i / attack_samples);
+        l++;
+    }
+
+    for (u32 i = 0; i < decay_samples; i++) {
+        *l *= (1.0 - (1.0 - sustain_ratio) * ((f64)i / decay_samples));
+        l++;
+    }
+
+    while (l < release_point) {
+        *l *= sustain_ratio;
+        l++;
+    }
+
+    u32 release_samples = SAMPLE_FREQUENCY * release_ms / 1000;
+
+    for (u32 i = 0; i < release_samples; i++) {
+        *l *= (sustain_ratio * (1.0 - ((f64)i / release_samples)));
+        l++;
+    }
+    
 }
 
 
@@ -238,7 +273,7 @@ int main(int argc, char* argv[]){
     // 100x, 1:24 loses me
     // my hearing is roughly 32Hz to 16.8kHz wow
 
-    f32 note = 375.0;
+    f32 note = 440.0;
 
 
     f32 base = note;
@@ -246,19 +281,27 @@ int main(int argc, char* argv[]){
     f32 fifth = base * 3.0 / 2.0;//SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT;
     f32 octave = base * 2.0;
 
-    /*triangle(l, base, effective_amplitude, note_duration_ms, 32);
-    l = l + SAMPLE_FREQUENCY;
+    triangle(l, base, 10000, 32);
+    adsr(l, 5000, 10, 80, 0.5, 10);
+//u8 adsr(f64* l, u16 key_hold_ms, f64 attack_ms, f64 decay_ms, f64 sustain_ratio, f64 release_ms) {
+
+    /*l = l + SAMPLE_FREQUENCY;
     triangle(l, major_third, effective_amplitude, note_duration_ms, 32);
     l = l + SAMPLE_FREQUENCY;
     triangle(l, fifth, effective_amplitude, note_duration_ms, 32);
     l = l + SAMPLE_FREQUENCY;
     triangle(l, octave, effective_amplitude, note_duration_ms, 32);*/
 
-    for (u8 i = 0; i < 12; i++) {
+    /*for (u8 i = 0; i < 12; i++) {
         sine(l, base, 1000);//, 32);
+
+        // what if we added ADSR to this thing?
+
+        adsr(l, 1000, attack, decay, sustain, release);
+
         l = l + SAMPLE_FREQUENCY;
         base *= SEMITONE_MULT;
-    }
+    }*/
 
 
     // idk, but lets scale it such that the highest peak is at this amplitude

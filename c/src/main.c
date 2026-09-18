@@ -107,8 +107,7 @@ void sawtooth(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms ) 
     }
 }
 
-void square(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms) {
-    u16 levels = 20;
+void square(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms, u16 levels) {
     // square
     for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
         for (u16 n = 1; n <= levels; n++) {
@@ -137,6 +136,15 @@ void triangle(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms, u
         //*l *= effective_amplitude;
         l++;
     }
+}
+
+void sine(f64* l, f32 note, u16 note_duration_ms) {
+    for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
+        *l += sin((1 * note * 2 * M_PI * j) / SAMPLE_FREQUENCY);
+
+        l++;
+    }
+
 }
 
 
@@ -238,13 +246,19 @@ int main(int argc, char* argv[]){
     f32 fifth = base * 3.0 / 2.0;//SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT;
     f32 octave = base * 2.0;
 
-    triangle(l, base, effective_amplitude, note_duration_ms, 32);
+    /*triangle(l, base, effective_amplitude, note_duration_ms, 32);
     l = l + SAMPLE_FREQUENCY;
     triangle(l, major_third, effective_amplitude, note_duration_ms, 32);
     l = l + SAMPLE_FREQUENCY;
     triangle(l, fifth, effective_amplitude, note_duration_ms, 32);
     l = l + SAMPLE_FREQUENCY;
-    triangle(l, octave, effective_amplitude, note_duration_ms, 32);
+    triangle(l, octave, effective_amplitude, note_duration_ms, 32);*/
+
+    for (u8 i = 0; i < 12; i++) {
+        sine(l, base, 1000);//, 32);
+        l = l + SAMPLE_FREQUENCY;
+        base *= SEMITONE_MULT;
+    }
 
 
     // idk, but lets scale it such that the highest peak is at this amplitude

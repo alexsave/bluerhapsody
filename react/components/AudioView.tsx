@@ -141,30 +141,43 @@ export const AudioView = () => {
 
                             const scaled_mag = mag/maxMag * 256;
                             //console.log(scaled_mag);
-
-                            context.fillStyle = `rgb(${scaled_mag}, ${scaled_mag}, ${scaled_mag})`;
                             //context.fillStyle = 'red';
-//'rgb(0.18873989692110288,0.18873989692110288,0.18873989692110288)';
-
                             
                             // flip f*dy sign later 
-                            context.fillRect(w*dx, f*dy, dx, dy);
                         }
-                        console.log('calling window done')
+                        //console.log('calling window done')
                     }
 
-                    //Our first draw
-                    //context.fillStyle = '#00FF00'
-                    //context.fillRect(20, 20, 20, 20);
+                    // this works for sure, but the better way might be going pixel by pixel and figuring out what is in that bucket
+                    // also log
 
-                    //const access = new Float64Array(Module.HEAPF64.buffer, spectraPtr/8 + 4, (numWindows+1)*windowSamples)
-                    //console.log(access[0]);
-                    //console.log(access[1]);
+                    //first come  up with width x height array of idk floats
+                    new Float32Array(canvas.width * canvas.height);
+                    //for (let y = 0; w < canvas.width; y++) {
+                        //for (let x = 0; x < canvas.width; x++) {
+//
+                            //// what "bounds" of this pixel
+                            //left bound - x/canvas.width * numWindows
+                        //}
+                    //}
+                    for (let w = 0; w < numWindows; w++) {
+                        const windowStartIdx = magStartIdx + w * windowSamples;
+                        for (let f = 0; f < windowSamples; f++) {
+                            const mag = Module.HEAPF64[windowStartIdx + f];
+                            const scaled_mag = mag/maxMag * 256;
+                            // now the question - what pixel does this belong in?
 
+                            let x = Math.floor(w * canvas.width / numWindows);
+                            // make it log sacle to be more interesting
+                            let y = Math.floor(Math.log2(f) * canvas.height / Math.log2(windowSamples));
 
-                    
-                    // pray
-                    //setLValues(resultFlatArray);;
+                            context.fillStyle = `rgb(${scaled_mag}, ${scaled_mag}, ${scaled_mag})`;
+                            context.fillRect(x, y, 1, 1);
+                        }
+                    }
+            
+
+                      
 
                     Module._free(inBuffer);
                     Module._free(lPtr);

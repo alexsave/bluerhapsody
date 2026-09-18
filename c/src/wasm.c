@@ -54,7 +54,8 @@ void set_frequencies(f64* frequency_array, f64 frequency, f64 bin_count) {
 
 void set_magnitudes(f64* mag_array, f64 bin_count, Cpx* fft_array) {
     for (u32 i = 0; i < bin_count; i++) 
-        mag_array[i] = pow((fft_array[i].re * fft_array[i].re) + (fft_array[i].im * fft_array[i].im), 0.5);
+        // actually power but whos's counting
+        mag_array[i] = (fft_array[i].re * fft_array[i].re) + (fft_array[i].im * fft_array[i].im);
 }
 
 // 0 for window samples is special case, just do fft over entire thing
@@ -63,9 +64,12 @@ Spectra * wasm_spectra(u8* file_buffer, u64 window_samples) {
 
 
     if (window_samples == 0){
+        printf("special case, 1 fft for entire thing\n");
         // how many samples are in a window, basically 
-        u64 bin_count;
-        Cpx * fft_array = fft(wc->left_channel, wc->sample_count, &bin_count);
+        u64 bin_count = 0;
+        printf("getting fft\n");
+        Cpx * fft_array = fft(wc->left_channel, wc->sample_count, &bin_count, 1);
+        printf("got fft\n");
 
         // 1 for frequency, 1 for amplitude
         Spectra * spectra = malloc(sizeof(Spectra) + (1+1)*bin_count*sizeof(f64));
@@ -76,9 +80,11 @@ Spectra * wasm_spectra(u8* file_buffer, u64 window_samples) {
 
         f64* start = spectra->data;
 
+        printf("assigning frequencies\n");
         set_frequencies(start, wc->frequency, bin_count);
         start += bin_count;
 
+        printf("assigning mags\n");
         set_magnitudes(start, bin_count, fft_array);
 
         free(fft_array);
@@ -126,7 +132,7 @@ FreqMag * wasm_fft(u8* file_buffer) {
 
     u64 bin_count;
 
-    Cpx * fft_array = fft(wc->left_channel, wc->sample_count, &bin_count);
+    Cpx * fft_array = fft(wc->left_channel, wc->sample_count, &bin_count, 1);
 
     // return magntitudes and frequency array?
 

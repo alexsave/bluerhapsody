@@ -9,7 +9,7 @@ typedef struct Cpx {
 } Cpx;
 
 Cpx* fast(char* filename);
-Cpx* fft(f64* channel, u32 sample_count, u64* bin_count);
+Cpx* fft(f64* channel, u32 sample_count, u64* bin_count, u8 hann_window);
 u64 fft_windows(f64* channel, u32 sample_count, u64* bin_count, Cpx** out_cpx);
 
 #endif

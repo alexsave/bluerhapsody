@@ -18,18 +18,26 @@ u32 bit_inverse(u32 index, u8 size) {
 }
 
 
-Cpx* fft(f64* channel, u32 sample_count, u64* bin_count) {
+Cpx* fft(f64* channel, u32 sample_count, u64* bin_count, u8 hann_window) {
 
     u8 log_bin_count = 0;
 
-    //printf("bin count %d, log is %d, sample_count\n", *bin_count, log_bin_count, sample_count);
+    printf("bin count %d, log is %d, sample_count\n", *bin_count, log_bin_count, sample_count);
 
     if (*bin_count < sample_count) {
         *bin_count = 1;
         while (*bin_count < sample_count) {
+            printf("bin count %d %d\n", bin_count, sample_count);
             *bin_count = *bin_count * 2;
             log_bin_count++;
         } 
+    } else if (*bin_count == sample_count) {
+        u64 temp = 1;
+        while (temp < sample_count) {
+            temp= temp* 2;
+            log_bin_count++;
+        }
+        
     }
 
 
@@ -42,6 +50,17 @@ Cpx* fft(f64* channel, u32 sample_count, u64* bin_count) {
         array[i].re = channel[i];
     }
     //printf("done filling complex array\n");
+
+
+    // hann window
+    if (hann_window == 1) {
+        f64 scaling = M_PI / sample_count;
+        f64 si;
+        for (u32 i = 0; i < sample_count; i++) {
+            si = sin(M_PI * i / sample_count);
+            array[i].re = array[i].re *  si * si;
+        }
+    }
 
 
     //2^20 bins, 1 # 48000
@@ -148,7 +167,7 @@ Cpx* fft(f64* channel, u32 sample_count, u64* bin_count) {
 u64 fft_windows(f64* channel, u32 sample_count, u64* bin_count, Cpx** out_cpx) {
 
     if (*bin_count == 0) {
-        Cpx* cpx = fft(channel, sample_count, bin_count);
+        Cpx* cpx = fft(channel, sample_count, bin_count, 1);
         *out_cpx = cpx;
         return 1;
     }
@@ -197,11 +216,11 @@ u64 fft_windows(f64* channel, u32 sample_count, u64* bin_count, Cpx** out_cpx) {
         }
         // do it, but break
         //printf("calling fft\n");
-        Cpx * cpx = fft(channel + i * increment, effective_sample_count, bin_count);
+        Cpx * cpx = fft(channel + i * increment, effective_sample_count, bin_count, 1);
         //printf("done calling fft\n");
 
         //printf("about to copy mem \n");
-        memcpy(out_run, cpx, window_size);
+        memcpy(out_run, cpx, window_size * sizeof(Cpx));
         //printf("about to free cpx\n");
         free(cpx);
         //printf("freed cpx\n");
@@ -222,9 +241,9 @@ Cpx* fast(char* filename) {
     // how many bins to choose?
     // I guess make it some 2^n value
     // this will be clear why when we do FFT 
-    u64 bin_count;
+    u64 bin_count = 0;
 
-    Cpx* array = fft(left_ptr, wm.sample_count, &bin_count);
+    Cpx* array = fft(left_ptr, wm.sample_count, &bin_count, 1);
     for (u32 i = 0; i < bin_count; i++) {
         // print out magnitude? (a+bi) => (a*a + b*b)
         printf("%lfHz: %lf\n", ((f64)i * (f64)wm.frequency) / (f64)bin_count, array[i].re * array[i].re + array[i].im * array[i].im);

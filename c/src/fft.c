@@ -22,12 +22,12 @@ Cpx* fft(f64* channel, u32 sample_count, u64* bin_count, u8 hann_window) {
 
     u8 log_bin_count = 0;
 
-    printf("bin count %d, log is %d, sample_count\n", *bin_count, log_bin_count, sample_count);
+    //printf("bin count %d, log is %d, sample_count\n", *bin_count, log_bin_count, sample_count);
 
     if (*bin_count < sample_count) {
         *bin_count = 1;
         while (*bin_count < sample_count) {
-            printf("bin count %d %d\n", bin_count, sample_count);
+            //printf("bin count %d %d\n", bin_count, sample_count);
             *bin_count = *bin_count * 2;
             log_bin_count++;
         } 
@@ -44,7 +44,7 @@ Cpx* fft(f64* channel, u32 sample_count, u64* bin_count, u8 hann_window) {
 
     // this alternates real and imaginary for cache lines
     Cpx* array = calloc(*bin_count, sizeof(Cpx));
-    //printf("done allocating complex array\n");
+    ////printf("done allocating complex array\n");
 
     for (u32 i = 0; i < sample_count; i++) {
         array[i].re = channel[i];

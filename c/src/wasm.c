@@ -30,7 +30,7 @@ WasmChannels* wasm_get_channels(u8* buffer) {
     // per channel
     u32 sample_count = data_bytes / (sample_bits / 8) / channel_count;
 
-    printf("sample bits %d channel # %d sample_count %d\n", sample_bits, channel_count, sample_count);
+    ////printf("sample bits %d channel # %d sample_count %d\n", sample_bits, channel_count, sample_count);
 
     f64* left_buffer = malloc(sample_count * sizeof(f64));
     f64* right_buffer = malloc(sample_count * sizeof(f64));
@@ -64,12 +64,12 @@ Spectra * wasm_spectra(u8* file_buffer, u64 window_samples) {
 
 
     if (window_samples == 0){
-        printf("special case, 1 fft for entire thing\n");
+        //printf("special case, 1 fft for entire thing\n");
         // how many samples are in a window, basically 
         u64 bin_count = 0;
-        printf("getting fft\n");
+        //printf("getting fft\n");
         Cpx * fft_array = fft(wc->left_channel, wc->sample_count, &bin_count, 1);
-        printf("got fft\n");
+        //printf("got fft\n");
 
         // 1 for frequency, 1 for amplitude
         Spectra * spectra = malloc(sizeof(Spectra) + (1+1)*bin_count*sizeof(f64));
@@ -80,11 +80,11 @@ Spectra * wasm_spectra(u8* file_buffer, u64 window_samples) {
 
         f64* start = spectra->data;
 
-        printf("assigning frequencies\n");
+        //printf("assigning frequencies\n");
         set_frequencies(start, wc->frequency, bin_count);
         start += bin_count;
 
-        printf("assigning mags\n");
+        //printf("assigning mags\n");
         set_magnitudes(start, bin_count, fft_array);
 
         free(fft_array);
@@ -92,7 +92,7 @@ Spectra * wasm_spectra(u8* file_buffer, u64 window_samples) {
         return spectra;
     }
 
-    //printf("getting fft windows\n");
+    ////printf("getting fft windows\n");
     Cpx* out_cpx = 0;
     
     u64 window_count = fft_windows(wc->left_channel, wc->sample_count, &window_samples, &out_cpx);

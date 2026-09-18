@@ -118,7 +118,7 @@ void copy_samples(u8* samples, u32 sample_count, FormatChunk* fc, f64* left, f64
 
 // returns sample count
 // might need to return frequency or something later
-WavMetadata get_channels(char* filename, f64** right_ptr, f64** left_ptr) {
+WavMetadata get_channels(char* filename, f64** left_ptr, f64** right_ptr) {
     FILE * file = fopen(filename, "rb");
 
     if (file == NULL)

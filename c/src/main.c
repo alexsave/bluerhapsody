@@ -129,9 +129,9 @@ void triangle(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms, u
             
             // at 1 positive, at 3 negative //001 011
             if((n & 2) == 2) // subtract
-                *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * -8.0 / M_PI / M_PI / n / n;
+                *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY - 1) * -8.0 / M_PI / M_PI / n / n;
             else // add
-                *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * 8.0 / M_PI / M_PI / n / n;
+                *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY - 1) * 8.0 / M_PI / M_PI / n / n;
         }
 
         //*l *= effective_amplitude;

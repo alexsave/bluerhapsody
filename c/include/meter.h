@@ -22,7 +22,7 @@ typedef struct WasmChannels {
 void meter(char* filename);
 void diff(char* filename1, char* filename);
 void spectrum(char* filename);
-WavMetadata get_channels(char* filename, f64** right_ptr, f64** left_ptr);
+WavMetadata get_channels(char* filename, f64** left_ptr, f64** right_ptr);
 void copy_samples(u8* samples, u32 sample_count, FormatChunk* fc, f64* left, f64* right);
 
 #endif

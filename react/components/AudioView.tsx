@@ -12,7 +12,7 @@ export const AudioView = () => {
 
     const [lValues, setLValues] = useState([]);
     const [frequency, setFrequency] = useState(1);
-    const [sampleCount, setSampleCount] = useState(1);
+    //const [sampleCount, setSampleCount] = useState(1);
 
     const [Module, setModule] = useState(null);
 
@@ -63,7 +63,7 @@ export const AudioView = () => {
                         [inBuffer]);
 
                     const sampleCount = Module.HEAPU32[resultPointer/4];
-                    setSampleCount(sampleCount);
+                    //setSampleCount(sampleCount);
                     const frequency = Module.HEAPU32[resultPointer/4 + 1];
                     setFrequency(frequency);
                     const lPtr = Module.HEAPU32[resultPointer/4 + 2];
@@ -81,16 +81,29 @@ export const AudioView = () => {
                     setData(resultFlatArray.map((s,i) => ({x: i/frequency, y: s})));
 
 
-                    const freqMagPtr = Module.ccall("wasm_fft", "number", ["number"], [inBuffer]);
+                    //Spectra * wasm_spectra(u8* file_buffer, u64 window_samples)
+
+                    const spectraPtr = Module.ccall("wasm_spectra", "number", ["number", "number"], [inBuffer, 8192n]);
                     
 
                     // now plot it in a canvas
 
-                    console.log(Module.HEAPF64[freqMagPtr/8]);
-                    console.log(Module.HEAPF64[freqMagPtr/8 + 1]);
+                    const totalSampleCount = Module.HEAPF64[spectraPtr/8];
+                    const sampleRate = Module.HEAPF64[spectraPtr/8 + 1];
+                    const windowSamples = Module.HEAPF64[spectraPtr/8 + 2];
+                    const numWindows = Module.HEAPF64[spectraPtr/8 + 3];
 
-                    console.log(Module.HEAPF64[freqMagPtr/8 + 2]);
-                    console.log(Module.HEAPF64[freqMagPtr/8 + 3]);
+                    // should we just assume that each window is at i * .5 * window duraiton?
+
+                    console.log(Module.HEAPU64[spectraPtr/8]);
+                    console.log(Module.HEAPU64[spectraPtr/8 + 1]);
+                    console.log(Module.HEAPU64[spectraPtr/8 + 2]);
+                    console.log(Module.HEAPU64[spectraPtr/8 + 3]);
+
+                    const acccess = new Float64Array(Module.HEAPF64.buffer, spectraPtr/8 + 4, (numWindows+1)*windowSamples)
+                    console.log(access[0]);
+                    console.log(access[1]);
+
 
                     
                     // pray
@@ -109,8 +122,10 @@ export const AudioView = () => {
         <p>{raw.byteLength}</p>
         <p>{JSON.stringify(lValues.slice(0,100))}</p>
         <p>{data.length}</p>
-        <ScatterPlot width={1000} height={600} data={data.slice(frequency*0,frequency*0+100)}/>
+        <ScatterPlot width={600} height={600} data={data.slice(frequency*0,frequency*0+100)}/>
   
+// very useful, take a look https://medium.com/@pdx.lucasm/canvas-with-react-js-32e133c05258
+//also -new Float64Array(Module.HEAPF64.buffer, ptr, count)
         <canvas ref={canvasRef}/>
 
 

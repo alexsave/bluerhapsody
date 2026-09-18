@@ -37,5 +37,5 @@ debug: clean $(OUTOBJS)
 	gcc $(FLAGS) -I include/ src/main.c $(OUTOBJS) -o ./bluerhapsody && ./bluerhapsody
 
 wasm: clean $(WOUTOBJS)
-	emcc -g -Wunused-function -Wunused-label -Wunused-value -Wunused-variable -Wunused-parameter -Wunused-but-set-parameter -ferror-limit=100 -Iinclude src/wasm.c $(WOUTOBJS) -o bluerhapsody.mjs -sEXPORTED_FUNCTIONS=_wasm_get_channels,_wasm_fft,_malloc,_free -sEXPORTED_RUNTIME_METHODS=ccall,cwrap,HEAPU8,HEAPU32,HEAPF64 -sALLOW_MEMORY_GROWTH -sMODULARIZE -sEXPORT_NAME='createModule' -sENVIRONMENT='web' -sSINGLE_FILE=1 && mv bluerhapsody.mjs ../react/wasm
+	emcc -g -Wunused-function -Wunused-label -Wunused-value -Wunused-variable -Wunused-parameter -Wunused-but-set-parameter -ferror-limit=100 -Iinclude src/wasm.c $(WOUTOBJS) -o bluerhapsody.mjs -sEXPORTED_FUNCTIONS=_wasm_get_channels,_wasm_spectra,_wasm_fft,_malloc,_free -sEXPORTED_RUNTIME_METHODS=ccall,cwrap,HEAPU8,HEAPU32,HEAPF64,HEAPU64 -sALLOW_MEMORY_GROWTH -sMODULARIZE -sEXPORT_NAME='createModule' -sENVIRONMENT='web' -sSINGLE_FILE=1 && mv bluerhapsody.mjs ../react/wasm
 

@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "types.h"
 #include "wasm.h"
@@ -53,7 +54,7 @@ void set_frequencies(f64* frequency_array, f64 frequency, f64 bin_count) {
 
 void set_magnitudes(f64* mag_array, f64 bin_count, Cpx* fft_array) {
     for (u32 i = 0; i < bin_count; i++) 
-        mag_array[i] = (fft_array[i].re * fft_array[i].re) + (fft_array[i].im * fft_array[i].im);
+        mag_array[i] = pow((fft_array[i].re * fft_array[i].re) + (fft_array[i].im * fft_array[i].im), 0.5);
 }
 
 // 0 for window samples is special case, just do fft over entire thing

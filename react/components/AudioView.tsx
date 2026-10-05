@@ -42,6 +42,10 @@ export const AudioView = () => {
         if (Number(binCount) != 2**Math.floor(Math.log2(Number(binCount))))
             return;
 
+        // buggy
+        if (binCount == 1)
+            return;
+
         if (!raw)
             return;
 

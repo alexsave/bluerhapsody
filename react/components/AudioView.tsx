@@ -13,7 +13,9 @@ export const AudioView = () => {
 
     const [lValues, setLValues] = useState([]);
     const [frequency, setFrequency] = useState(1);
-    //const [sampleCount, setSampleCount] = useState(1);
+
+    const [sampleCount, setSampleCount] = useState(100);
+    const [sampleStart, setSampleStart] = useState(100);
 
     const [Module, setModule] = useState(null);
 
@@ -221,8 +223,10 @@ export const AudioView = () => {
         <p>{JSON.stringify(lValues.slice(0,100))}</p>
         <p>{data.length}</p>
         <input value={''+binCount} type="text" onChange={e => setBinCount(BigInt(e.target.value))} style={{border: '1px solid blue'}}/>
+        <input value={''+sampleStart} type="text" onChange={e => setSampleStart(+e.target.value)} style={{border: '1px solid blue'}}/>
+        <input value={''+sampleCount} type="text" onChange={e => setSampleCount(+e.target.value)} style={{border: '1px solid blue'}}/>
         <canvas width={1000} height={1000} ref={canvasRef}/>
-        <ScatterPlot width={600} height={600} data={data.slice(frequency*0,frequency*0+100)}/>
+        <ScatterPlot width={600} height={600} data={data.slice(sampleStart, sampleStart + sampleCount)}/>
   
 // very useful, take a look https://medium.com/@pdx.lucasm/canvas-with-react-js-32e133c05258
 //also -new Float64Array(Module.HEAPF64.buffer, ptr, count)

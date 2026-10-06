@@ -216,25 +216,30 @@ int main(int argc, char* argv[]){
         }
 
         // dumb I know but hang with me
-
-        *run += voice_step(v1).left;
-        *run += voice_step(v2).left;
-        *run += voice_step(v3).left;
-        *run += voice_step(v4).left;
-        *run += voice_step(v5).left;
-        *run += voice_step(v6).left;
-        *run += voice_step(v7).left;
-        *run += voice_step(v8).left;
-
-        *rrun += voice_step(v1).right;
-        *rrun += voice_step(v2).right;
-        *rrun += voice_step(v3).right;
-        *rrun += voice_step(v4).right;
-        *rrun += voice_step(v5).right;
-        *rrun += voice_step(v6).right;
-        *rrun += voice_step(v7).right;
-        *rrun += voice_step(v8).right;
-
+        LRSample lrs = voice_step(v1);
+        *run += lrs.left;
+        *rrun += lrs.right;
+        lrs = voice_step(v2);
+        *run += lrs.left;
+        *rrun += lrs.right;
+        lrs = voice_step(v3);
+        *run += lrs.left;
+        *rrun += lrs.right;
+        lrs = voice_step(v4);
+        *run += lrs.left;
+        *rrun += lrs.right;
+        lrs = voice_step(v5);
+        *run += lrs.left;
+        *rrun += lrs.right;
+        lrs = voice_step(v6);
+        *run += lrs.left;
+        *rrun += lrs.right;
+        lrs = voice_step(v7);
+        *run += lrs.left;
+        *rrun += lrs.right;
+        lrs = voice_step(v8);
+        *run += lrs.left;
+        *rrun += lrs.right;
 
         run++;
         rrun++;

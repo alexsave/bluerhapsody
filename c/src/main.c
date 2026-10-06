@@ -7,6 +7,7 @@
 #include "types.h"
 #include "meter.h"
 #include "wav.h"
+#include "voice.h"
 
 #include "fft.h"
 
@@ -280,8 +281,31 @@ int main(int argc, char* argv[]){
     f32 fifth = base * 3.0 / 2.0;//SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT;
     f32 octave = base * 2.0;
 
-    triangle(l, base, 10000, 32);
-    adsr(l, 2000, 500, 500, 0.5, 500);
+    //triangle(l, base, 10000, 32);
+    //adsr(l, 2000, 500, 500, 0.5, 500);
+
+    Voice* v = voice_init(SAMPLE_FREQUENCY, 0, 440.0, 300, 400, .5, 500);
+
+    
+    f64* run = left;
+    
+    for (u32 i = 0; i < NUM_SAMPLES; i++) {
+        //printf("%d\n", i);
+        if (i == 48000) {
+            voice_press(v);
+        } else if (i == 5*48000) {
+            voice_release(v);
+        }
+
+        
+
+        f64 step = voice_step(v);
+        *run = step;
+        //printf("step %i is %f\n", i, step);
+        run++;
+    }
+
+
 //u8 adsr(f64* l, u16 key_hold_ms, f64 attack_ms, f64 decay_ms, f64 sustain_ratio, f64 release_ms) {
 
     /*l = l + SAMPLE_FREQUENCY;

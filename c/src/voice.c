@@ -1,0 +1,116 @@
+#import <stdlib.h>
+#import <stdio.h>
+#import <math.h>
+
+#import "types.h"
+#import "voice.h"
+
+Voice* voice_init(u32 sample_rate, u8 wave_type, f64 frequency, f64 attack_ms, f64 decay_ms, f64 sustain_ratio, f64 release_ms) {
+    Voice* voice = malloc(sizeof(Voice));
+
+    voice->phase = 0.0;
+    voice->envelope_stage = STAGE_OFF;
+    voice->time_into_stage_ms = 0.0;
+
+    voice->sample_rate = sample_rate;
+
+
+    voice->voice_frequency = frequency;
+    voice->attack_ms = attack_ms;
+    voice->decay_ms = decay_ms;
+    voice->sustain_ratio = sustain_ratio;
+    voice->release_ms = release_ms;
+    
+    voice->wave_type = wave_type;
+
+    // this is like at what amplitude did we hit the button
+    voice->attack_start = 0.0;
+
+    return voice;
+}
+
+// like current amplitude irregardless of freq, only ADSR
+f64 current_ampl(Voice* voice){
+    if (voice->envelope_stage == STAGE_OFF) 
+        return 0.0;
+    if (voice->envelope_stage == STAGE_ATTACK) 
+        return voice->attack_start + (1.0-voice->attack_start) * (voice->time_into_stage_ms) / (voice->attack_ms);
+    if (voice->envelope_stage == STAGE_DECAY) 
+        return (1.0 - (1.0 - voice->sustain_ratio) * (voice->time_into_stage_ms / voice->decay_ms));
+    if (voice->envelope_stage == STAGE_SUSTAIN) 
+        return voice->sustain_ratio;
+
+    if (voice->envelope_stage == STAGE_RELEASE) 
+        return (voice->sustain_ratio - (voice->sustain_ratio * voice->time_into_stage_ms / voice->release_ms));
+
+}
+
+// intialize attack
+void voice_press(Voice* voice) {
+    voice->attack_start = current_ampl(voice);
+    voice->envelope_stage = STAGE_ATTACK;
+    voice->time_into_stage_ms = 0.0;
+}
+
+// start release
+void voice_release(Voice* voice) {
+    voice->release_start = current_ampl(voice);
+    voice->envelope_stage = STAGE_RELEASE;
+    voice->time_into_stage_ms = 0.0;
+}
+
+// one sample rate at a time
+f64 voice_step(Voice* voice) {
+    // frequency and sample_rate
+    // lets see
+    // if frequency was 2hz, and sample rate was 8hz
+    // the phase would go 0, pi/2, pi, 3pi/2, 2pi
+    // ok if your note frequency was HIGHER this whould hcang emore
+    // if sample rate was higher this would change less
+
+    // each is Hz
+    //printf("update by %f (%f/%f)\n", (voice->voice_frequency / voice->sample_rate), voice->voice_frequency, voice->sample_rate);
+    voice->phase += 2.0 * M_PI * voice->voice_frequency / voice->sample_rate;
+    voice->time_into_stage_ms += 1000.0 / voice->sample_rate;
+    // wait it woulb e better to keep track of how many samples we are into the 
+
+    // default really high
+    f64 end_of_stage_ms = 1000*60*60*24;
+    // default same stage
+    u8 next_stage = voice->envelope_stage;
+
+    if (voice->envelope_stage == STAGE_OFF) {
+        // nothing lol
+    } else if (voice->envelope_stage == STAGE_ATTACK) {
+        end_of_stage_ms = voice->attack_ms;
+        next_stage = STAGE_DECAY;
+    } else if (voice->envelope_stage == STAGE_DECAY) {
+        end_of_stage_ms = voice->decay_ms;
+        next_stage = STAGE_SUSTAIN;
+    } else if (voice->envelope_stage == STAGE_SUSTAIN) {
+        //end_of_stage_ms = voice->decay_ms;
+        // it ends when yo let go
+    } else if (voice->envelope_stage == STAGE_RELEASE) {
+        end_of_stage_ms = voice->release_ms;
+        next_stage = STAGE_OFF;
+    }
+
+    if (voice->time_into_stage_ms >= end_of_stage_ms) {
+        //swap the stage
+        voice->envelope_stage = next_stage;
+        voice->time_into_stage_ms = 0.0;
+    }
+
+    // ok now emit
+    // for now just do sin wave
+
+    //printf("current_ampl %f raw %f phase %f\n", current_ampl(voice), sin(voice->phase), voice->phase);
+
+    return sin(voice->phase) * current_ampl(voice);
+}
+
+void voice_free(Voice* voice) {
+    free(voice);
+}
+
+

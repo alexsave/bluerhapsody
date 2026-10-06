@@ -1,8 +1,8 @@
 OBJDIR := out
-OUTOBJS := $(addprefix $(OBJDIR)/, meter.o fft.o)
+OUTOBJS := $(addprefix $(OBJDIR)/, meter.o fft.o voice.o)
 
 WOBJDIR := wout
-WOUTOBJS := $(addprefix $(WOBJDIR)/, meter.o fft.o)
+WOUTOBJS := $(addprefix $(WOBJDIR)/, meter.o fft.o voice.o)
 
 FLAGS := -g -Wunused-function -Wunused-label -Wunused-value -Wunused-variable -Wunused-parameter -Wunused-but-set-parameter -ferror-limit=100 -Wall -Wextra
 

@@ -152,12 +152,12 @@ int main(int argc, char* argv[]){
     u16 note_duration_ms = 5000;
 
     f64* left = calloc(sizeof(f64), NUM_SAMPLES);
-    //f64* right = calloc(sizeof(f64), NUM_SAMPLES);
+    f64* right = calloc(sizeof(f64), NUM_SAMPLES);
 
     // just do A4 for now
 
     f64* l = left;
-    //f64* r = right;
+    f64* r = right;
 
 
     // 16 s in I hear something - roughly 32Hz
@@ -181,17 +181,27 @@ int main(int argc, char* argv[]){
 
     
     f64* run = left;
+    f64* rrun = right;
     
     for (u32 i = 0; i < NUM_SAMPLES; i++) {
         //printf("%d\n", i);
         if (i == 48000) {
+
             voice_press(v0);
+        } else if (i == 2*48000) {
+            voice_pan(v0, -1.0, 500);
         } else if (i == 3*48000) {
+            voice_pan(v0, 1.0, 9000);
             voice_press(v1);
         } else if (i == 5*48000) {
             voice_press(v2);
         } else if (i == 7*48000) {
             voice_press(v3);
+
+            voice_pan(v0, 1.0, 2000);
+            voice_pan(v1, 1.0, 2000);
+            voice_pan(v2, 1.0, 2000);
+            voice_pan(v3, 1.0, 2000);
         } else if (i == 11*48000) {
             voice_release(v0);
             voice_release(v1);
@@ -199,12 +209,18 @@ int main(int argc, char* argv[]){
             voice_release(v3);
         }
 
-        *run += voice_step(v0);
-        *run += voice_step(v1);
-        *run += voice_step(v2);
-        *run += voice_step(v3);
+        *run += voice_step(v0).left;
+        //*run += voice_step(v1).left;
+        //*run += voice_step(v2).left;
+        //*run += voice_step(v3).left;
+
+        *rrun += voice_step(v0).right;
+        //*rrun += voice_step(v1).right;
+        //*rrun += voice_step(v2).right;
+        //*rrun += voice_step(v3).right;;
         //printf("step %i is %f\n", i, step);
         run++;
+        rrun++;
     }
 
 
@@ -214,6 +230,16 @@ int main(int argc, char* argv[]){
     f64 min = *left;
     f64 max = *left;
     f64 value = *left;
+
+    for (f64 * r = right; r < right + NUM_SAMPLES; r++) {
+        value = *r;
+        if (value < min)
+            min = value;
+        else if (value > max)
+            max = value;
+    }
+    printf("min %f max %f\n", min, max);
+
     for (f64 * r = left; r < left + NUM_SAMPLES; r++) {
         value = *r;
         if (value < min)
@@ -221,6 +247,7 @@ int main(int argc, char* argv[]){
         else if (value > max)
             max = value;
     }
+
     printf("min %f max %f\n", min, max);
     
     if (min * -1.0 > max)
@@ -233,11 +260,13 @@ int main(int argc, char* argv[]){
     // scale entire thing down
     for (l = left; l < left + NUM_SAMPLES; l++)
         *l *= scaled_amplitude;
+    for (r = right; r < right + NUM_SAMPLES; r++)
+        *r *= scaled_amplitude;
 
 
     u8* sampled_data = (u8*)(wav + sizeof(RiffChunk) + sizeof(FormatChunk) + sizeof(DataChunk));
     // DO NOT pass values not between -1 and 1 to this
-    write_samples(left, left, sampled_data);
+    write_samples(left, right, sampled_data);
 
 
     // E, F, F#, G, G#, A, A#, B, C, C#, D, D#

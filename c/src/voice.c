@@ -27,6 +27,12 @@ Voice* voice_init(u32 sample_rate, u8 wave_type, f64 frequency, f64 attack_ms, f
     // this is like at what amplitude did we hit the button
     voice->attack_start = 0.0;
 
+    voice->pan_position = 0.0;
+    voice->pan_ms = 0.0;
+    voice->pan_start = 0.0;
+    voice->pan_end = 0.0;
+    voice->time_into_pan_ms = 0.0;
+
     return voice;
 }
 
@@ -61,7 +67,7 @@ void voice_release(Voice* voice) {
 }
 
 // one sample rate at a time
-f64 voice_step(Voice* voice) {
+LRSample voice_step(Voice* voice) {
     // frequency and sample_rate
     // lets see
     // if frequency was 2hz, and sample rate was 8hz
@@ -117,7 +123,37 @@ f64 voice_step(Voice* voice) {
     else if (voice->wave_type == TYPE_SAWTOOTH) 
         raw = sawtooth(voice->phase, 8);
 
-    return raw * current_ampl(voice);
+    // ok now another phase, stereo
+    voice->time_into_pan_ms += 1000.0 / voice->sample_rate;
+    if(voice->time_into_pan_ms >= voice->pan_ms) {
+        // stop it
+        voice->pan_ms = 0.0;
+        voice->time_into_pan_ms = 0.0;
+    } else {
+        // not done yet
+        voice->pan_position = voice->pan_start + (voice->pan_end - voice->pan_start) * (voice->time_into_pan_ms / voice->pan_ms);
+    }
+
+    // ok now lets try to be dumb about it
+    
+    f64 unpanned = raw * current_ampl(voice);
+
+    // linear -> -1.0 means left * 1, right * 0
+    // linear -> 1.0 means left * 0, right * 1
+
+    
+
+    // maybe it would be easier to do 0 to 1?
+    // nah -1 and 1 makes more sense
+    LRSample lrs = {.left = unpanned * ((-voice->pan_position + 1.0)/2.0), .right = unpanned * ((voice->pan_position + 1.0)/2.0) };
+    return lrs;
+}
+
+void voice_pan(Voice* voice, f64 to, f64 pan_ms) {
+    voice->pan_start = voice->pan_position;
+    voice->pan_end = to;
+    voice->time_into_pan_ms = 0.0;
+    voice->pan_ms = pan_ms;
 }
 
 void voice_free(Voice* voice) {

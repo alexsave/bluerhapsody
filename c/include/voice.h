@@ -16,6 +16,11 @@ static const u8 TYPE_TRIANGLE = 1;
 static const u8 TYPE_SQUARE = 2;
 static const u8 TYPE_SAWTOOTH = 3;
 
+typedef struct LRSample {
+    f64 left;
+    f64 right;
+} LRSample;
+
 typedef struct Voice {
     f64 phase; // like where we are in the "circle", this is the angle
     u8 envelope_stage;
@@ -36,6 +41,13 @@ typedef struct Voice {
     f64 attack_start;
     f64 release_start;
     
+    //-1 left, 1 right
+    f64 pan_position;
+
+    f64 pan_start;
+    f64 pan_end;
+    f64 pan_ms;
+    f64 time_into_pan_ms;
     
 } Voice;
 
@@ -54,7 +66,9 @@ void voice_release(Voice* voice);
 
 // would be nice to take something like "samples since start", as constnatly adding to phase will hurt
 // but jumping phase will also cause gaps if we change frequency so this is better
-f64 voice_step(Voice* voice);
+LRSample voice_step(Voice* voice);
+
+void voice_pan(Voice* voice, f64 to, f64 pan_ms);
 
 void voice_free(Voice* voice);
 

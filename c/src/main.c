@@ -95,94 +95,6 @@ void* write_headers() {
     return wav;
 }
 
-void sawtooth(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms ) {
-    u16 levels = 20;
-    // sawtooth
-    for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
-        for (u16 n = 1; n <= levels; n++) {
-            *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * -2.0 / M_PI / n;
-        }
-        
-        //*l *= effective_amplitude;
-        l++;
-    }
-}
-
-void square(f64* l, f32 note, f32 effective_amplitude, u16 note_duration_ms, u16 levels) {
-    // square
-    for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
-        for (u16 n = 1; n <= levels; n++) {
-            if((n & 1) == 0) continue;
-            *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY) * 4.0 / M_PI / n;
-        }
-        
-        //*l *= effective_amplitude;
-        l++;
-    }
-}
-
-void triangle(f64* l, f32 note, u16 note_duration_ms, u16 levels) { 
-    // triangle
-    for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
-        for (u16 n = 1; n <= levels; n++) {
-            if((n & 1) == 0) continue;
-            
-            // at 1 positive, at 3 negative //001 011
-            if((n & 2) == 2) // subtract
-                *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY - 1) * -8.0 / M_PI / M_PI / n / n;
-            else // add
-                *l += sin((n * note * 2 * M_PI * j) / SAMPLE_FREQUENCY - 1) * 8.0 / M_PI / M_PI / n / n;
-        }
-
-        l++;
-    }
-}
-
-void sine(f64* l, f32 note, u16 note_duration_ms) {
-    for(u32 j = 0; j < SAMPLE_FREQUENCY / 1000 * note_duration_ms; j++) {
-        *l += sin((1 * note * 2 * M_PI * j) / SAMPLE_FREQUENCY);
-
-        l++;
-    }
-
-}
-
-// all in ms
-// return status
-u8 adsr(f64* l, u16 key_hold_ms, f64 attack_ms, f64 decay_ms, f64 sustain_ratio, f64 release_ms) {
-    if (attack_ms + decay_ms > key_hold_ms)
-        return 1;
-    
-    u32 attack_samples = SAMPLE_FREQUENCY * attack_ms / 1000;
-    u32 decay_samples = SAMPLE_FREQUENCY * decay_ms / 1000;
-
-    u32 hold_samples = SAMPLE_FREQUENCY * key_hold_ms / 1000;
-    f64* release_point = l + hold_samples;
-
-    for (u32 i = 0; i < attack_samples; i++) {
-        *l *= ((f64)i / attack_samples);
-        l++;
-    }
-
-    for (u32 i = 0; i < decay_samples; i++) {
-        *l *= (1.0 - (1.0 - sustain_ratio) * ((f64)i / decay_samples));
-        l++;
-    }
-
-    while (l < release_point) {
-        *l *= sustain_ratio;
-        l++;
-    }
-
-    u32 release_samples = SAMPLE_FREQUENCY * release_ms / 1000;
-
-    for (u32 i = 0; i < release_samples; i++) {
-        *l *= (sustain_ratio * (1.0 - ((f64)i / release_samples)));
-        l++;
-    }
-    
-}
-
 
 int main(int argc, char* argv[]){
 
@@ -236,28 +148,8 @@ int main(int argc, char* argv[]){
 
     const f64 SEMITONE_MULT = pow(2.0, 1.0/12.0);
 
-    // BEHOLD - the ladder of semitones
-    /*static const u16 A3 = A4 >> 1;
-    static const u16 A4 = 440;
-    static const u16 A5 = A4 << 1;
-    const u16 AS3 = A3 * SEMITONE_MULT;
-    const u16 B3 = A3 * SEMITONE_MULT * SEMITONE_MULT;
-    const u16 C3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT;
-    const u16 CS3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT;;
-    const u16 D3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT;
-    const u16 DS3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT;
-    const u16 E3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT;
-    const u16 F3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT;
-    const u16 FS3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT;
-    const u16 G3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT;
-    const u16 GS3 = A3 * SEMITONE_MULT * SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT* SEMITONE_MULT;
-        b*/
 
     u16 note_duration_ms = 5000;
-    //u16 rest_duration_ms = 200;
-
-
-    // create f64*
 
     f64* left = calloc(sizeof(f64), NUM_SAMPLES);
     //f64* right = calloc(sizeof(f64), NUM_SAMPLES);
@@ -273,18 +165,19 @@ int main(int argc, char* argv[]){
     // 100x, 1:24 loses me
     // my hearing is roughly 32Hz to 16.8kHz wow
 
-    f32 note = 440.0;
+    f64 note = 440.0;
 
 
-    f32 base = note;
-    f32 major_third = base * SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT;
-    f32 fifth = base * 3.0 / 2.0;//SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT;
-    f32 octave = base * 2.0;
+    f64 base = note;
+    f64 major_third = base * SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT;
+    f64 fifth = base * 3.0 / 2.0;//SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT;
+    f64 octave = base * 2.0;
 
-    //triangle(l, base, 10000, 32);
-    //adsr(l, 2000, 500, 500, 0.5, 500);
 
-    Voice* v = voice_init(SAMPLE_FREQUENCY, 0, 440.0, 300, 400, .5, 500);
+    Voice* v0 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, base, 300, 400, .5, 500);
+    Voice* v1 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, major_third, 300, 400, .5, 500);
+    Voice* v2 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, fifth, 300, 400, .5, 500);
+    Voice* v3 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, octave, 300, 400, .5, 500);
 
     
     f64* run = left;
@@ -292,39 +185,28 @@ int main(int argc, char* argv[]){
     for (u32 i = 0; i < NUM_SAMPLES; i++) {
         //printf("%d\n", i);
         if (i == 48000) {
-            voice_press(v);
+            voice_press(v0);
+        } else if (i == 3*48000) {
+            voice_press(v1);
         } else if (i == 5*48000) {
-            voice_release(v);
+            voice_press(v2);
+        } else if (i == 7*48000) {
+            voice_press(v3);
+        } else if (i == 11*48000) {
+            voice_release(v0);
+            voice_release(v1);
+            voice_release(v2);
+            voice_release(v3);
         }
 
-        
-
-        f64 step = voice_step(v);
-        *run = step;
+        *run += voice_step(v0);
+        *run += voice_step(v1);
+        *run += voice_step(v2);
+        *run += voice_step(v3);
         //printf("step %i is %f\n", i, step);
         run++;
     }
 
-
-//u8 adsr(f64* l, u16 key_hold_ms, f64 attack_ms, f64 decay_ms, f64 sustain_ratio, f64 release_ms) {
-
-    /*l = l + SAMPLE_FREQUENCY;
-    triangle(l, major_third, effective_amplitude, note_duration_ms, 32);
-    l = l + SAMPLE_FREQUENCY;
-    triangle(l, fifth, effective_amplitude, note_duration_ms, 32);
-    l = l + SAMPLE_FREQUENCY;
-    triangle(l, octave, effective_amplitude, note_duration_ms, 32);*/
-
-    /*for (u8 i = 0; i < 12; i++) {
-        sine(l, base, 1000);//, 32);
-
-        // what if we added ADSR to this thing?
-
-        adsr(l, 1000, attack, decay, sustain, release);
-
-        l = l + SAMPLE_FREQUENCY;
-        base *= SEMITONE_MULT;
-    }*/
 
 
     // idk, but lets scale it such that the highest peak is at this amplitude

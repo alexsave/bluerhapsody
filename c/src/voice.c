@@ -3,6 +3,7 @@
 #import <math.h>
 
 #import "types.h"
+#import "shape.h"
 #import "voice.h"
 
 Voice* voice_init(u32 sample_rate, u8 wave_type, f64 frequency, f64 attack_ms, f64 decay_ms, f64 sustain_ratio, f64 release_ms) {
@@ -106,7 +107,17 @@ f64 voice_step(Voice* voice) {
 
     //printf("current_ampl %f raw %f phase %f\n", current_ampl(voice), sin(voice->phase), voice->phase);
 
-    return sin(voice->phase) * current_ampl(voice);
+    f64 raw;
+    if (voice->wave_type == TYPE_SIN) 
+        raw = sine(voice->phase);
+    else if (voice->wave_type == TYPE_TRIANGLE) 
+        raw = triangle(voice->phase, 8);
+    else if (voice->wave_type == TYPE_SQUARE) 
+        raw = square(voice->phase, 8);
+    else if (voice->wave_type == TYPE_SAWTOOTH) 
+        raw = sawtooth(voice->phase, 8);
+
+    return raw * current_ampl(voice);
 }
 
 void voice_free(Voice* voice) {

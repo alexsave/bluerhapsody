@@ -266,7 +266,6 @@ int main(int argc, char* argv[]){
     f64* l = left;
     //f64* r = right;
 
-    // sin
 
     // 16 s in I hear something - roughly 32Hz
 
@@ -282,7 +281,7 @@ int main(int argc, char* argv[]){
     f32 octave = base * 2.0;
 
     triangle(l, base, 10000, 32);
-    adsr(l, 5000, 10, 80, 0.5, 10);
+    adsr(l, 2000, 500, 500, 0.5, 500);
 //u8 adsr(f64* l, u16 key_hold_ms, f64 attack_ms, f64 decay_ms, f64 sustain_ratio, f64 release_ms) {
 
     /*l = l + SAMPLE_FREQUENCY;
@@ -337,7 +336,7 @@ int main(int argc, char* argv[]){
 
     // E, F, F#, G, G#, A, A#, B, C, C#, D, D#
 
-    FILE * file = fopen("m02_additive_chord.wav" , "wb");
+    FILE * file = fopen("m04_arpeggio.wav" , "wb");
 
     if (!file)
         return 1;

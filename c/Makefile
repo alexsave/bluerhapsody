@@ -4,7 +4,7 @@ OUTOBJS := $(addprefix $(OBJDIR)/, meter.o fft.o)
 WOBJDIR := wout
 WOUTOBJS := $(addprefix $(WOBJDIR)/, meter.o fft.o)
 
-FLAGS := -g -Wunused-function -Wunused-label -Wunused-value -Wunused-variable -Wunused-parameter -Wunused-but-set-parameter -ferror-limit=100
+FLAGS := -g -Wunused-function -Wunused-label -Wunused-value -Wunused-variable -Wunused-parameter -Wunused-but-set-parameter -ferror-limit=100 -Wall -Wextra
 
 out/%.o: src/%.c
 	gcc $(FLAGS) -c -Iinclude $< -o $@

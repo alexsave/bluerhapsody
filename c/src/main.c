@@ -170,15 +170,18 @@ int main(int argc, char* argv[]){
 
     f64 base = note;
     f64 major_third = base * SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT;
-    f64 fifth = base * 3.0 / 2.0;//SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT;
+    f64 fifth = base * 3.0 / 2.0;// SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT;
     f64 octave = base * 2.0;
 
 
-    Voice* v0 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, base, 300, 400, .5, 500);
-    Voice* v1 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, major_third, 300, 400, .5, 500);
-    Voice* v2 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, fifth, 300, 400, .5, 500);
-    Voice* v3 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, octave, 300, 400, .5, 500);
-
+    Voice* v1 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, base, 300, 400, .5, 500);
+    Voice* v2 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, base*SEMITONE_MULT*SEMITONE_MULT, 300, 400, .5, 500);
+    Voice* v3 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, major_third, 300, 400, .5, 500);
+    Voice* v4 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, major_third*SEMITONE_MULT, 300, 400, .5, 500);
+    Voice* v5 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, fifth, 300, 400, .5, 500);
+    Voice* v6 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, fifth*SEMITONE_MULT*SEMITONE_MULT, 300, 400, .5, 500);
+    Voice* v7 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, fifth*SEMITONE_MULT*SEMITONE_MULT*SEMITONE_MULT*SEMITONE_MULT, 300, 400, .5, 500);
+    Voice* v8 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, octave, 300, 400, .5, 500);
     
     f64* run = left;
     f64* rrun = right;
@@ -186,39 +189,53 @@ int main(int argc, char* argv[]){
     for (u32 i = 0; i < NUM_SAMPLES; i++) {
         //printf("%d\n", i);
         if (i == 48000) {
-
-            voice_press(v0);
-        } else if (i == 2*48000) {
-            voice_pan(v0, -1.0, 500);
-        } else if (i == 3*48000) {
-            voice_pan(v0, 1.0, 9000);
             voice_press(v1);
-        } else if (i == 5*48000) {
-            voice_press(v2);
-        } else if (i == 7*48000) {
-            voice_press(v3);
-
-            voice_pan(v0, 1.0, 2000);
-            voice_pan(v1, 1.0, 2000);
-            voice_pan(v2, 1.0, 2000);
-            voice_pan(v3, 1.0, 2000);
-        } else if (i == 11*48000) {
-            voice_release(v0);
+        } else if (i == 2*48000) {
             voice_release(v1);
+            voice_press(v2);
+        } else if (i == 3*48000) {
             voice_release(v2);
+            voice_press(v3);
+        } else if (i == 4*48000) {
             voice_release(v3);
+            voice_press(v4);
+        } else if (i == 5*48000) {
+            voice_release(v4);
+            voice_press(v5);
+        } else if (i == 6*48000) {
+            voice_release(v5);
+            voice_press(v6);
+        } else if (i == 7*48000) {
+            voice_release(v6);
+            voice_press(v7);
+        } else if (i == 8*48000) {
+            voice_release(v7);
+            voice_press(v8);
+        } else if (i == 9*48000) {
+            voice_release(v8);
         }
 
-        *run += voice_step(v0).left;
-        //*run += voice_step(v1).left;
-        //*run += voice_step(v2).left;
-        //*run += voice_step(v3).left;
+        // dumb I know but hang with me
 
-        *rrun += voice_step(v0).right;
-        //*rrun += voice_step(v1).right;
-        //*rrun += voice_step(v2).right;
-        //*rrun += voice_step(v3).right;;
-        //printf("step %i is %f\n", i, step);
+        *run += voice_step(v1).left;
+        *run += voice_step(v2).left;
+        *run += voice_step(v3).left;
+        *run += voice_step(v4).left;
+        *run += voice_step(v5).left;
+        *run += voice_step(v6).left;
+        *run += voice_step(v7).left;
+        *run += voice_step(v8).left;
+
+        *rrun += voice_step(v1).right;
+        *rrun += voice_step(v2).right;
+        *rrun += voice_step(v3).right;
+        *rrun += voice_step(v4).right;
+        *rrun += voice_step(v5).right;
+        *rrun += voice_step(v6).right;
+        *rrun += voice_step(v7).right;
+        *rrun += voice_step(v8).right;
+
+
         run++;
         rrun++;
     }

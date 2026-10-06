@@ -141,11 +141,17 @@ LRSample voice_step(Voice* voice) {
     // linear -> -1.0 means left * 1, right * 0
     // linear -> 1.0 means left * 0, right * 1
 
+    //-1 is like max left, so  first
+
+    f64 angle = ((voice->pan_position + 1.0) * M_PI / 4.0);
     
 
     // maybe it would be easier to do 0 to 1?
     // nah -1 and 1 makes more sense
-    LRSample lrs = {.left = unpanned * ((-voice->pan_position + 1.0)/2.0), .right = unpanned * ((voice->pan_position + 1.0)/2.0) };
+    LRSample lrs = {
+        .left = unpanned * cos(angle),
+        .right = unpanned * sin(angle)
+    };
     return lrs;
 }
 

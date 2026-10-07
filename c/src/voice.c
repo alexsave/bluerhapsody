@@ -88,24 +88,26 @@ LRSample voice_step(Voice* voice) {
 
     if (voice->envelope_stage == STAGE_OFF) {
         // nothing lol
-    } else if (voice->envelope_stage == STAGE_ATTACK) {
-        end_of_stage_ms = voice->attack_ms;
-        next_stage = STAGE_DECAY;
-    } else if (voice->envelope_stage == STAGE_DECAY) {
-        end_of_stage_ms = voice->decay_ms;
-        next_stage = STAGE_SUSTAIN;
-    } else if (voice->envelope_stage == STAGE_SUSTAIN) {
-        //end_of_stage_ms = voice->decay_ms;
-        // it ends when yo let go
-    } else if (voice->envelope_stage == STAGE_RELEASE) {
-        end_of_stage_ms = voice->release_ms;
-        next_stage = STAGE_OFF;
-    }
+    } else {
+        if (voice->envelope_stage == STAGE_ATTACK) {
+            end_of_stage_ms = voice->attack_ms;
+            next_stage = STAGE_DECAY;
+        } else if (voice->envelope_stage == STAGE_DECAY) {
+            end_of_stage_ms = voice->decay_ms;
+            next_stage = STAGE_SUSTAIN;
+        } else if (voice->envelope_stage == STAGE_SUSTAIN) {
+            //end_of_stage_ms = voice->decay_ms;
+            // it ends when yo let go
+        } else if (voice->envelope_stage == STAGE_RELEASE) {
+            end_of_stage_ms = voice->release_ms;
+            next_stage = STAGE_OFF;
+        }
 
-    if (voice->time_into_stage_ms >= end_of_stage_ms) {
-        //swap the stage
-        voice->envelope_stage = next_stage;
-        voice->time_into_stage_ms = 0.0;
+        if (voice->time_into_stage_ms >= end_of_stage_ms) {
+            //swap the stage
+            voice->envelope_stage = next_stage;
+            voice->time_into_stage_ms = 0.0;
+        }
     }
 
     // ok now emit
@@ -113,15 +115,7 @@ LRSample voice_step(Voice* voice) {
 
     //printf("current_ampl %f raw %f phase %f\n", current_ampl(voice), sin(voice->phase), voice->phase);
 
-    f64 raw;
-    if (voice->wave_type == TYPE_SIN) 
-        raw = sine(voice->phase);
-    else if (voice->wave_type == TYPE_TRIANGLE) 
-        raw = triangle(voice->phase, 8);
-    else if (voice->wave_type == TYPE_SQUARE) 
-        raw = square(voice->phase, 8);
-    else if (voice->wave_type == TYPE_SAWTOOTH) 
-        raw = sawtooth(voice->phase, 8);
+
 
     // ok now another phase, stereo
     voice->time_into_pan_ms += 1000.0 / voice->sample_rate;
@@ -134,8 +128,27 @@ LRSample voice_step(Voice* voice) {
         voice->pan_position = voice->pan_start + (voice->pan_end - voice->pan_start) * (voice->time_into_pan_ms / voice->pan_ms);
     }
 
+    if (voice->envelope_stage == STAGE_OFF) {
+        // skip the sin stuff
+        LRSample lrs = {
+            .left = 0.0,
+            .right = 0.0
+        };
+        return lrs;
+    }
+
+    f64 raw;
+    if (voice->wave_type == TYPE_SIN) 
+        raw = sine(voice->phase);
+    else if (voice->wave_type == TYPE_TRIANGLE) 
+        raw = triangle(voice->phase, 8);
+    else if (voice->wave_type == TYPE_SQUARE) 
+        raw = square(voice->phase, 8);
+    else if (voice->wave_type == TYPE_SAWTOOTH) 
+        raw = sawtooth(voice->phase, 8);
+
     // ok now lets try to be dumb about it
-    
+
     f64 unpanned = raw * current_ampl(voice);
 
     // linear -> -1.0 means left * 1, right * 0
@@ -144,7 +157,7 @@ LRSample voice_step(Voice* voice) {
     //-1 is like max left, so  first
 
     f64 angle = ((voice->pan_position + 1.0) * M_PI / 4.0);
-    
+
 
     // maybe it would be easier to do 0 to 1?
     // nah -1 and 1 makes more sense

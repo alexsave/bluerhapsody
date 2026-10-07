@@ -201,7 +201,7 @@ int main(int argc, char* argv[]){
 
     // [position]: ([note char][optional #]?[optional octave number]?[optional duration]?)+
     char* stream1 = "0: G#2T C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E";
-    char* stream2 = "0: ( C#1W C#2 )";
+    char* stream2 = "0: C#2W ( C#1 C#2 ) C#3 ";
 
     /**(notes + 2) = *note_init(GS2, 0, TRPL);
     *(notes + 3) = *note_init(CS3, 4, TRPL);
@@ -255,7 +255,7 @@ int main(int argc, char* argv[]){
 
     u8 parser_state = SPACE;
 
-    u8 note_mod = 0;
+    u8 note_mod = MAX_U8;
     u16 dur = 0;
 
     u64 current_beat = 0;
@@ -263,10 +263,44 @@ int main(int argc, char* argv[]){
     u64 group_first_dur = 0;
     u64 group_first_start = 0;
 
+    u8 first_of_group = 0;
+
     while(*ptr != 0) {
         char c = *ptr;
+        if (c == '(' || c == ')' || c == ' ' || *(ptr+1) == 0) {
+            printf("last note ended but %d %d\n", note_mod, dur);
+            // last note definitely just ended
+            if(note_mod != MAX_U8){
+                u16 index = note_mod + octave_n* 12;
+                if(dur != 0){
+                    if(!in_paren){
+                        u64 s = ((u64)current_beat << 48) | PRESS_BIT | index;
+                        u64 f = ((u64)(current_beat+dur) << 48) | index;
+
+                        printf("note detected, from %d to %d, index %d\n", current_beat, current_beat+dur, index);
+
+                        pq_push(events, s);
+                        pq_push(events, f);
+
+                        current_beat += dur;
+                    } else {
+                        u64 s = ((u64)group_first_start << 48) | PRESS_BIT | index;
+                        u64 f = ((u64)(group_first_start+dur) << 48) | index;
+
+                        printf("note detected, from %d to %d, index %d\n", group_first_start, group_first_start+dur, index);
+
+                        pq_push(events, s);
+                        pq_push(events, f);
+                    }
+                }
+            }
+
+            note_mod = MAX_U8;
+        }
         if (c == ' '){
             parser_state = SPACE;
+            if(note_mod != MAX_U8)
+                first_of_group = 0;
         } else if ((c >= 'A') && (c <= 'G')) {
             if (parser_state != SPACE && parser_state != A_PAREN) {
                 printf("invalaid format, no space before note\n");
@@ -296,8 +330,11 @@ int main(int argc, char* argv[]){
                 exit(1);
             } 
             in_paren = 1;
+            printf("setting group first start to %d\n", current_beat);
             group_first_start = current_beat;
-            group_first_dur = 0;
+            first_of_group = 1;
+            group_first_dur = dur;
+            printf("setting group first duration to %d\n", dur);
             parser_state = A_PAREN;
         } else if (c == ')') {
             if (!in_paren) {
@@ -307,7 +344,10 @@ int main(int argc, char* argv[]){
             in_paren = 0;
             current_beat += group_first_dur;
             parser_state = B_PAREN;
+            dur = group_first_dur;
+            printf("setting duration to gfd %d\n", group_first_dur);
             start_of_group = 0;
+            note_mod = MAX_U8;
         } else if (c == 'b') {
             if (parser_state != NOTE) {
                 printf("invalid format, stray #\n");
@@ -348,46 +388,60 @@ int main(int argc, char* argv[]){
 
             //parser_state = TIME;
 
-            if (in_paren && (group_first_dur == 0))
+            if (in_paren && (first_of_group == 1)) {
                 group_first_dur = dur;
+                printf("first of group, setting gfd to dur %d\n", dur);
+                first_of_group = 0;
+            }
+            // otherwise if you dont set the duration of the note atom, the gorup will adopt the previous duration
         }
 
 
-        if (parser_state == SPACE) {
-            u16 index = note_mod + octave_n* 12;
-            if(!in_paren){
-                u64 s = ((u64)current_beat << 48) | PRESS_BIT | index;
-                u64 f = ((u64)(current_beat+dur) << 48) | index;
+        if (*(ptr+1) == 0) {
+            if(note_mod != MAX_U8){
+                u16 index = note_mod + octave_n* 12;
+                if(dur != 0){
+                    if(!in_paren){
+                        u64 s = ((u64)current_beat << 48) | PRESS_BIT | index;
+                        u64 f = ((u64)(current_beat+dur) << 48) | index;
 
-                printf("note detected, from %d to %d, index %d\n", current_beat, current_beat+dur, index);
+                        printf("note detected, from %d to %d, index %d\n", current_beat, current_beat+dur, index);
 
-                pq_push(events, s);
-                pq_push(events, f);
+                        pq_push(events, s);
+                        pq_push(events, f);
 
-                current_beat += dur;
-            } else {
-                u64 s = ((u64)start_of_group << 48) | PRESS_BIT | index;
-                u64 f = ((u64)(start_of_group+dur) << 48) | index;
+                        current_beat += dur;
+                    } else {
+                        u64 s = ((u64)start_of_group << 48) | PRESS_BIT | index;
+                        u64 f = ((u64)(start_of_group+dur) << 48) | index;
 
-                printf("note detected, from %d to %d, index %d\n", start_of_group, start_of_group+dur, index);
+                        printf("note detected, from %d to %d, index %d\n", start_of_group, start_of_group+dur, index);
 
-                pq_push(events, s);
-                pq_push(events, f);
+                        pq_push(events, s);
+                        pq_push(events, f);
+                    }
+                }
             }
+
+            note_mod = MAX_U8;
         }
 
 
         ptr++;
 
+        ////if(*ptr == 0) {
+        //
+        //}
+
 
 
     }
     // incase there is no final space
-    u64 s = ((u64)current_beat << 48) | PRESS_BIT | (note_mod + octave_n * 12);
-    u64 f = ((u64)(current_beat+dur) << 48) | (note_mod + octave_n * 12);
-
-    pq_push(events, s);
-    pq_push(events, f);
+    //u64 s = ((u64)current_beat << 48) | PRESS_BIT | (note_mod + octave_n * 12);
+    //u64 f = ((u64)(current_beat+dur) << 48) | (note_mod + octave_n * 12);
+    //
+    ////pq_push(events, s);
+    //pq_push(events, f);
 
 
 
@@ -417,16 +471,16 @@ int main(int argc, char* argv[]){
 
 
     /*for (u32 i = 0; i < note_count; i++) {
-        Note* n = notes + i;
-        n->finish = n->start + n->duration;
+      Note* n = notes + i;
+      n->finish = n->start + n->duration;
 
-        u64 s = ((u64)n->start << 48) | PRESS_BIT | n->index;
-        u64 f = ((u64)n->finish << 48) | n->index;
+      u64 s = ((u64)n->start << 48) | PRESS_BIT | n->index;
+      u64 f = ((u64)n->finish << 48) | n->index;
 
-        pq_push(events, s);
-        pq_push(events, f);
+      pq_push(events, s);
+      pq_push(events, f);
 
-    }*/
+      }*/
 
     // in per minute lol
     u16 BPM = 60;

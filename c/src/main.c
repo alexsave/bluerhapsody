@@ -5,12 +5,14 @@
 #include <math.h>
 
 #include "types.h"
+#include "constants.h"
 #include "note.h"
 #include "meter.h"
 #include "wav.h"
 #include "voice.h"
 
 #include "fft.h"
+#include "pq.h"
 
 static const u32 SAMPLE_FREQUENCY = 48000;
 static const u16 SAMPLE_BITS = 16;
@@ -178,11 +180,15 @@ int main(int argc, char* argv[]){
     // these are indexes on piano lol
     u16 A0 = 0;
     u16 A1 = 11;
+    u16 CS1 = 15;
     u16 A2 = 23;
+    u16 C2 = 26;
+    u16 CS2 = 27;
     u16 G2 = 33;
     u16 GS2 = 34;
 
     u16 A3 = 35;
+    u16 C3 = 38;
     u16 CS3 = 39;
     u16 E3 = 42;
     u16 G3 = 45;
@@ -209,27 +215,41 @@ int main(int argc, char* argv[]){
         note *= SEMITONE_MULT;
     }
 
-    u32 note_count = 12;
+    u32 note_count = 14;
 
     Note * notes = calloc(note_count, sizeof(Note));
 
-    *(notes + 0) = *note_init(GS2, 0, 2);
-    *(notes + 1) = *note_init(CS3, 2, 2);
-    *(notes + 2) = *note_init(E3, 4, 2);
-    *(notes + 3) = *note_init(GS2, 6, 2);
-    *(notes + 4) = *note_init(CS3, 8, 2);
-    *(notes + 5) = *note_init(E3, 10, 2);
-    *(notes + 6) = *note_init(GS2, 12, 2);
-    *(notes + 7) = *note_init(CS3, 14, 2);
-    *(notes + 8) = *note_init(E3, 16, 2);
-    *(notes + 9) = *note_init(GS2, 18, 2);
-    *(notes + 10) = *note_init(CS3, 20, 2);
-    *(notes + 11) = *note_init(E3, 22, 2);
+    *(notes + 1) = *note_init(CS2, 0, 16);
+    *(notes + 0) = *note_init(CS1, 0, 16);
 
+     *(notes + 2) = *note_init(GS2, 0, 2);
+     *(notes + 3) = *note_init(CS3, 2, 2);
+     *(notes + 4) = *note_init(E3, 4, 2);
+     *(notes + 5) = *note_init(GS2, 6, 2);
+     *(notes + 6) = *note_init(CS3, 8, 2);
+     *(notes + 7) = *note_init(E3, 10, 2);
+     *(notes + 8) = *note_init(GS2, 12, 2);
+     *(notes + 9) = *note_init(CS3, 14, 2);
+     *(notes + 10) = *note_init(E3, 16, 2);
+     *(notes + 11) = *note_init(GS2, 18, 2);
+     *(notes + 12) = *note_init(CS3, 20, 2);
+     *(notes + 13) = *note_init(E3, 22, 2);
+
+    PQ* events = pq_init();
+
+    // 1 << 16
+    u64 PRESS_BIT = 1 << 16;
 
     for (u32 i = 0; i < note_count; i++) {
         Note* n = notes + i;
         n->finish = n->start + n->duration;
+
+        u64 s = ((u64)n->start << 48) | PRESS_BIT | n->index;
+        u64 f = ((u64)n->finish << 48) | n->index;
+
+        pq_push(events, s);
+        pq_push(events, f);
+
     }
 
     // in per minute lol
@@ -250,29 +270,22 @@ int main(int argc, char* argv[]){
 
     for (u32 i = 0; i < NUM_SAMPLES; i++) {
 
-        // in 1/16th notes
-        // truncated to last 1/16th note
-        // that 60 comes from 60 s per min, the 4 comes from 4 16th in a quarter note
-        u16 current_beat = (f64)(i) * sixteenths_per_sample;
-        //printf("current beat %d i %d\n", current_beat, i);
+        if(!pq_is_empty(events)) {
 
-        while (press_index < note_count && notes[press_index].start <= current_beat) {
-            voice_press(piano + notes[press_index].index);
-            press_index++;
-        } 
+            u16 current_beat = (f64)(i) * sixteenths_per_sample;
 
-        while (release_index < note_count && notes[release_index].finish <= current_beat) {
-            voice_release(piano + notes[release_index].index);
-            release_index++;
-        } 
+            u64 event = pq_peek(events);
+            u64 event_beat = event >> 48;
+            u64 event_index = event & MAX_U16;
 
-        if (press_index < note_count && notes[press_index].start < current_beat ){
-            printf("somehow we misssed a note, might be out of order start %d %d\n", current_beat, press_index);
-            exit(1);
-        }
-        if( release_index < note_count && notes[release_index].finish < current_beat) {
-            printf("somehow we misssed a note, might be out of order finish %d\n", current_beat);
-            exit(1);
+            if (current_beat >= event_beat) {
+                pq_pop(events);
+                if (PRESS_BIT & event) {
+                    voice_press(piano + event_index);
+                } else {
+                    voice_release(piano + event_index);
+                }
+            }
         }
 
         for (u16 i = 0; i < PIANO_KEYS; i++) {

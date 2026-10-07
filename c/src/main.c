@@ -179,10 +179,23 @@ int main(int argc, char* argv[]){
     u16 A0 = 0;
     u16 A1 = 11;
     u16 A2 = 23;
+    u16 G2 = 33;
+    u16 GS2 = 34;
+
     u16 A3 = 35;
+    u16 CS3 = 39;
+    u16 E3 = 42;
+    u16 G3 = 45;
+    u16 GS3 = 46;
+
     u16 A4 = 47;
     u16 AS4 = 48;
     u16 B4 = 49;
+    u16 C4 = 50;
+    u16 CS4 = 51;
+    u16 D4 = 52;
+    u16 DS4 = 53;
+    u16 E4 = 54;
 
     for (u16 i = 0; i < PIANO_KEYS; i++) {
         if (i%12 == 0) {
@@ -196,14 +209,22 @@ int main(int argc, char* argv[]){
         note *= SEMITONE_MULT;
     }
 
-    u32 note_count = 2;
+    u32 note_count = 12;
 
     Note * notes = calloc(note_count, sizeof(Note));
 
-    //(*notes)[0] = { .index = A4, .start = 16, .duration = 1};
-    //notes[1] = { .index = AS4, .start = 32, .duration = 1};
-    *(notes + 0) = *note_init(A4, 16, 1);
-    *(notes + 1) = *note_init(AS4, 32, 1);
+    *(notes + 0) = *note_init(GS2, 0, 2);
+    *(notes + 1) = *note_init(CS3, 2, 2);
+    *(notes + 2) = *note_init(E3, 4, 2);
+    *(notes + 3) = *note_init(GS2, 6, 2);
+    *(notes + 4) = *note_init(CS3, 8, 2);
+    *(notes + 5) = *note_init(E3, 10, 2);
+    *(notes + 6) = *note_init(GS2, 12, 2);
+    *(notes + 7) = *note_init(CS3, 14, 2);
+    *(notes + 8) = *note_init(E3, 16, 2);
+    *(notes + 9) = *note_init(GS2, 18, 2);
+    *(notes + 10) = *note_init(CS3, 20, 2);
+    *(notes + 11) = *note_init(E3, 22, 2);
 
 
     for (u32 i = 0; i < note_count; i++) {
@@ -212,7 +233,7 @@ int main(int argc, char* argv[]){
     }
 
     // in per minute lol
-    u16 BPM = 120;
+    u16 BPM = 60;
 
 
     // only goes up
@@ -223,15 +244,8 @@ int main(int argc, char* argv[]){
     f64* run = left;
     f64* rrun = right;
 
-    //SAMPLE_FREQUENCY * BPM / 60 
-
-    //f64 samples_per_sixteenth = SAMPLE_FREQUENCY * 60 / BPM / 4;
 
     f64 sixteenths_per_sample = (f64)(BPM * 4) / (f64)(SAMPLE_FREQUENCY * 60);
-
-    //i / samples_per_sixteenth
-
-    //i * BPM * 4 / SAMPLE_FREQUENCY / 60;
 
 
     for (u32 i = 0; i < NUM_SAMPLES; i++) {
@@ -242,12 +256,12 @@ int main(int argc, char* argv[]){
         u16 current_beat = (f64)(i) * sixteenths_per_sample;
         //printf("current beat %d i %d\n", current_beat, i);
 
-        while (press_index < note_count && notes[press_index].start == current_beat) {
+        while (press_index < note_count && notes[press_index].start <= current_beat) {
             voice_press(piano + notes[press_index].index);
             press_index++;
         } 
 
-        while (release_index < note_count && notes[release_index].finish == current_beat) {
+        while (release_index < note_count && notes[release_index].finish <= current_beat) {
             voice_release(piano + notes[release_index].index);
             release_index++;
         } 

@@ -30,10 +30,6 @@ void parse_stream(char* stream, PQ* events) {
     }
 
 
-    // 1 << 16
-    u64 PRESS_BIT = 1 << 16;
-
-
     // convert to 48ths
     start_position *= QTR;
 
@@ -58,8 +54,8 @@ void parse_stream(char* stream, PQ* events) {
 
     while(*ptr != 0) {
         char c = *ptr;
-        if (c == '(' || c == ')' || c == ' ' || *(ptr+1) == 0) {
-            printf("last note ended but %d %d\n", note_mod, dur);
+        if (c == '(' || c == ')' || c == ' ') {
+            //printf("last note ended but %d %d\n", note_mod, dur);
             // last note definitely just ended
             if(note_mod != MAX_U8){
                 u16 index = note_mod + octave_n* 12;
@@ -122,11 +118,11 @@ void parse_stream(char* stream, PQ* events) {
                 exit(1);
             }
             in_paren = 1;
-            printf("setting group first start to %d\n", current_beat);
+            //printf("setting group first start to %d\n", current_beat);
             group_first_start = current_beat;
             first_of_group = 1;
             group_first_dur = dur;
-            printf("setting group first duration to %d\n", dur);
+            //printf("setting group first duration to %d\n", dur);
             parser_state = A_PAREN;
         } else if (c == ')') {
             if (!in_paren) {
@@ -137,7 +133,7 @@ void parse_stream(char* stream, PQ* events) {
             current_beat += group_first_dur;
             parser_state = B_PAREN;
             dur = group_first_dur;
-            printf("setting duration to gfd %d\n", group_first_dur);
+            //printf("setting duration to gfd %d\n", group_first_dur);
             start_of_group = 0;
             note_mod = MAX_U8;
 
@@ -184,51 +180,41 @@ void parse_stream(char* stream, PQ* events) {
 
             if (in_paren && (first_of_group == 1)) {
                 group_first_dur = dur;
-                printf("first of group, setting gfd to dur %d\n", dur);
+                //printf("first of group, setting gfd to dur %d\n", dur);
                 first_of_group = 0;
             }
             // otherwise if you dont set the duration of the note atom, the gorup will adopt the previous duration
         }
 
 
-        if (*(ptr+1) == 0) {
-            if(note_mod != MAX_U8){
-                u16 index = note_mod + octave_n* 12;
-                if(dur != 0){
-                    if(!in_paren){
-                        u64 s = ((u64)current_beat << 48) | PRESS_BIT | index;
-                        u64 f = ((u64)(current_beat+dur) << 48) | index;
-
-                        printf("note detected, from %d to %d, index %d\n", current_beat, current_beat+dur, index);
-
-                        pq_push(events, s);
-                        pq_push(events, f);
-
-                        current_beat += dur;
-                    } else {
-                        u64 s = ((u64)start_of_group << 48) | PRESS_BIT | index;
-                        u64 f = ((u64)(start_of_group+dur) << 48) | index;
-
-                        printf("note detected, from %d to %d, index %d\n", start_of_group, start_of_group+dur, index);
-
-                        pq_push(events, s);
-                        pq_push(events, f);
-                    }
-                }
-            }
-
-            note_mod = MAX_U8;
-        }
-
-
         ptr++;
 
-        ////if(*ptr == 0) {
-        //
-        //}
-
-
-
     }
+
+    if(note_mod != MAX_U8){
+        u16 index = note_mod + octave_n* 12;
+        if(dur != 0){
+            if(!in_paren){
+                u64 s = ((u64)current_beat << 48) | PRESS_BIT | index;
+                u64 f = ((u64)(current_beat+dur) << 48) | index;
+
+                printf("note detected, from %d to %d, index %d\n", current_beat, current_beat+dur, index);
+
+                pq_push(events, s);
+                pq_push(events, f);
+
+                current_beat += dur;
+            } else {
+                u64 s = ((u64)start_of_group << 48) | PRESS_BIT | index;
+                u64 f = ((u64)(start_of_group+dur) << 48) | index;
+
+                printf("note detected, from %d to %d, index %d\n", start_of_group, start_of_group+dur, index);
+
+                pq_push(events, s);
+                pq_push(events, f);
+            }
+        }
+    }
+
 
 }

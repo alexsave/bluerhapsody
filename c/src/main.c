@@ -219,21 +219,23 @@ int main(int argc, char* argv[]){
 
     Note * notes = calloc(note_count, sizeof(Note));
 
-    *(notes + 1) = *note_init(CS2, 0, 16);
-    *(notes + 0) = *note_init(CS1, 0, 16);
+    *(notes + 1) = *note_init(CS2, 0, WHL);
+    *(notes + 0) = *note_init(CS1, 0, WHL);
 
-     *(notes + 2) = *note_init(GS2, 0, 2);
-     *(notes + 3) = *note_init(CS3, 2, 2);
-     *(notes + 4) = *note_init(E3, 4, 2);
-     *(notes + 5) = *note_init(GS2, 6, 2);
-     *(notes + 6) = *note_init(CS3, 8, 2);
-     *(notes + 7) = *note_init(E3, 10, 2);
-     *(notes + 8) = *note_init(GS2, 12, 2);
-     *(notes + 9) = *note_init(CS3, 14, 2);
-     *(notes + 10) = *note_init(E3, 16, 2);
-     *(notes + 11) = *note_init(GS2, 18, 2);
-     *(notes + 12) = *note_init(CS3, 20, 2);
-     *(notes + 13) = *note_init(E3, 22, 2);
+    *(notes + 2) = *note_init(GS2, 0, TRPL);
+    *(notes + 3) = *note_init(CS3, 4, TRPL);
+    *(notes + 4) = *note_init(E3, 8, TRPL);
+    *(notes + 5) = *note_init(GS2, 12, TRPL);
+    *(notes + 6) = *note_init(CS3, 16, TRPL);
+    *(notes + 7) = *note_init(E3, 20, TRPL);
+    *(notes + 8) = *note_init(GS2, 24, TRPL);
+    *(notes + 9) = *note_init(CS3, 28, TRPL);
+    *(notes + 10) = *note_init(E3, 32, TRPL);
+    *(notes + 11) = *note_init(GS2, 36, TRPL);
+    *(notes + 12) = *note_init(CS3, 40, TRPL);
+    *(notes + 13) = *note_init(E3, 44, TRPL);
+    //*(notes + 14) = 0?/;
+    //*(notes + 15) = note...
 
     PQ* events = pq_init();
 
@@ -265,14 +267,14 @@ int main(int argc, char* argv[]){
     f64* rrun = right;
 
 
-    f64 sixteenths_per_sample = (f64)(BPM * 4) / (f64)(SAMPLE_FREQUENCY * 60);
+    f64 fortyeighths = (f64)(BPM * 4 * 3) / (f64)(SAMPLE_FREQUENCY * 60);
 
 
     for (u32 i = 0; i < NUM_SAMPLES; i++) {
 
         if(!pq_is_empty(events)) {
 
-            u16 current_beat = (f64)(i) * sixteenths_per_sample;
+            u16 current_beat = (f64)(i) * fortyeighths;
 
             u64 event = pq_peek(events);
             u64 event_beat = event >> 48;

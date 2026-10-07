@@ -17,7 +17,7 @@
 
 static const u32 SAMPLE_FREQUENCY = 48000;
 static const u16 SAMPLE_BITS = 16;
-static const u16 DURATION_S = 20;
+static const u16 DURATION_S = 30;
 
 static const u8 CHANNEL_COUNT = 2;
 
@@ -200,8 +200,8 @@ int main(int argc, char* argv[]){
     // same for length [S,T,I,Q,H,W] (I for eIghth)
 
     // [position]: ([note char][optional #]?[optional octave number]?[optional duration]?)+
-    char* stream1 = "0: G#2T C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E A C# E A C# E A D F# A D F#";
-    char* stream2 = "0: (C#1W C#2) (B1 B2) (A1H A2) (F#0 F#1)";
+    char* stream1 = "|0: G#2T C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E |12: A C# E A C# E A D F# A D F#";
+    char* stream2 = "|0: (C#1W C#2) (B1 B2) |12: (A1H A2) (F#0 F#1)";
 
     PQ* events = pq_init();
 

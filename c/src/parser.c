@@ -9,7 +9,6 @@
 
 void parse_stream(char* stream, PQ* events) {
 
-
     u8 in_paren = 0;
 
     char* ptr = stream;
@@ -18,20 +17,9 @@ void parse_stream(char* stream, PQ* events) {
 
 
     // in the format this is in quarter notes, not 48ths
-    u64 start_position = 0;
-    while(*ptr != ':') {
-        start_position *= 10;
-        start_position += (*ptr - '0');
-        ptr++;
-        if (*ptr == 0){
-            printf("invalid format, no colon\n");
-            exit(1);
-        }
-    }
 
 
     // convert to 48ths
-    start_position *= QTR;
 
     // step through char by char until the end
 
@@ -54,7 +42,7 @@ void parse_stream(char* stream, PQ* events) {
 
     while(*ptr != 0) {
         char c = *ptr;
-        if (c == '(' || c == ')' || c == ' ') {
+        if (c == '(' || c == ')' || c == ' ' || c == '|') {
             //printf("last note ended but %d %d\n", note_mod, dur);
             // last note definitely just ended
             if(note_mod != MAX_U8){
@@ -85,7 +73,23 @@ void parse_stream(char* stream, PQ* events) {
             note_mod = MAX_U8;
         }
 
-        if (c == ' '){
+        if (c == '|') {
+            // that means that some beat # follows, and we should go there
+            ptr++;
+            u64 start_position = 0;
+            while(*ptr != ':') {
+                start_position *= 10;
+                start_position += (*ptr - '0');
+                ptr++;
+                if (*ptr == 0){
+                    printf("invalid format, no colon\n");
+                    exit(1);
+                }
+            }
+        
+            current_beat = start_position * QTR;
+
+        } else if (c == ' '){
             parser_state = SPACE;
             if(note_mod != MAX_U8)
                 first_of_group = 0;

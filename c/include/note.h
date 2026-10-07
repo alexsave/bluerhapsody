@@ -14,6 +14,8 @@ static const u16 WHL = 48;
 
 static const u16 A0 = 0;
 static const u16 A1 = 11; 
+static const u16 B1 = 13; 
+static const u16 C1 = 14; 
 static const u16 CS1 = 15; 
 static const u16 A2 = 23; 
 static const u16 C2 = 26; 
@@ -22,6 +24,7 @@ static const u16 G2 = 33;
 static const u16 GS2 = 34; 
 
 static const u16 A3 = 35; 
+static const u16 B3 = 37; 
 static const u16 C3 = 38; 
 static const u16 CS3 = 39; 
 static const u16 E3 = 42; 

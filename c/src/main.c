@@ -5,6 +5,7 @@
 #include <math.h>
 
 #include "types.h"
+#include "parser.h"
 #include "constants.h"
 #include "note.h"
 #include "meter.h"
@@ -201,7 +202,7 @@ int main(int argc, char* argv[]){
 
     // [position]: ([note char][optional #]?[optional octave number]?[optional duration]?)+
     char* stream1 = "0: G#2T C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E";
-    char* stream2 = "0: C#2W ( C#1 C#2 ) C#3 ";
+    char* stream2 = "0: (C#1W C#2) (B1 B2)";
 
     /**(notes + 2) = *note_init(GS2, 0, TRPL);
     *(notes + 3) = *note_init(CS3, 4, TRPL);
@@ -444,7 +445,10 @@ int main(int argc, char* argv[]){
     //pq_push(events, f);
 
 
+    events = pq_init();
 
+    parse_stream(stream1, events);
+    parse_stream(stream2, events);
 
 
     //printf("start pos %llu\n", start_position);

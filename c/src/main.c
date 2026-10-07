@@ -17,7 +17,7 @@
 
 static const u32 SAMPLE_FREQUENCY = 48000;
 static const u16 SAMPLE_BITS = 16;
-static const u16 DURATION_S = 30;
+static const u16 DURATION_S = 280;
 
 static const u8 CHANNEL_COUNT = 2;
 
@@ -192,7 +192,19 @@ int main(int argc, char* argv[]){
         note *= SEMITONE_MULT;
     }
 
-    u32 note_count = 200;
+
+
+    FILE * file = fopen(argv[2], "rb");
+    fseek(file, 0, SEEK_END);
+    u32 size = ftell(file);
+    rewind(file);
+    u8* buffer = (u8*)malloc(sizeof(u8) * (size + 1));
+    u32 result = fread(buffer, 1, size, file);
+
+    buffer[result] = 0;
+
+    char* stream = (char*)buffer;
+
 
 
     // stream POSITION start
@@ -200,14 +212,9 @@ int main(int argc, char* argv[]){
     // same for length [S,T,I,Q,H,W] (I for eIghth)
 
     // [position]: ([note char][optional #]?[optional octave number]?[optional duration]?)+
-    char* stream1 = "|0: G#2T C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E G#2 C#3 E |12: A C# E A C# E A D F# A D F#";
-    char* stream2 = "|0: (C#1W C#2) (B1 B2) |12: (A1H A2) (F#0 F#1)";
-
     PQ* events = pq_init();
-
-    parse_stream(stream1, events);
-    parse_stream(stream2, events);
-
+    //
+    parse_stream(stream, events);
 
     // in per minute lol
     u16 BPM = 60;
@@ -299,7 +306,7 @@ int main(int argc, char* argv[]){
 
     // E, F, F#, G, G#, A, A#, B, C, C#, D, D#
 
-    FILE * file = fopen("m04_arpeggio.wav" , "wb");
+    file = fopen("m04_arpeggio.wav" , "wb");
 
     if (!file)
         return 1;

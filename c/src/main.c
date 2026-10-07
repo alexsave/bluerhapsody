@@ -165,23 +165,28 @@ int main(int argc, char* argv[]){
     // 100x, 1:24 loses me
     // my hearing is roughly 32Hz to 16.8kHz wow
 
+    u16 PIANO_KEYS = 88;
+
+    Voice* piano = calloc(PIANO_KEYS, sizeof(Voice));
+    Voice* temp;
+
     f64 note = 440.0;
 
+    f64 octave = 27.5;
 
-    f64 base = note;
-    f64 major_third = base * SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT;
-    f64 fifth = base * 3.0 / 2.0;// SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT * SEMITONE_MULT;
-    f64 octave = base * 2.0;
+    for (u16 i = 0; i < PIANO_KEYS; i++) {
+        if (i%12 == 0) {
+            // it's an A, reset
+            note = octave;
+            octave *= 2.0;
+        }
+
+        temp = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, note, 50, 50, .5, 500);
+        memcpy(piano + i, temp, sizeof(Voice));
+        note *= SEMITONE_MULT;
+    }
 
 
-    Voice* v1 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, base, 300, 400, .5, 500);
-    Voice* v2 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, base*SEMITONE_MULT*SEMITONE_MULT, 300, 400, .5, 500);
-    Voice* v3 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, major_third, 300, 400, .5, 500);
-    Voice* v4 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, major_third*SEMITONE_MULT, 300, 400, .5, 500);
-    Voice* v5 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, fifth, 300, 400, .5, 500);
-    Voice* v6 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, fifth*SEMITONE_MULT*SEMITONE_MULT, 300, 400, .5, 500);
-    Voice* v7 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, fifth*SEMITONE_MULT*SEMITONE_MULT*SEMITONE_MULT*SEMITONE_MULT, 300, 400, .5, 500);
-    Voice* v8 = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, octave, 300, 400, .5, 500);
     
     f64* run = left;
     f64* rrun = right;
@@ -189,57 +194,37 @@ int main(int argc, char* argv[]){
     for (u32 i = 0; i < NUM_SAMPLES; i++) {
         //printf("%d\n", i);
         if (i == 48000) {
-            voice_press(v1);
+            voice_press(piano + 47);
         } else if (i == 2*48000) {
-            voice_release(v1);
-            voice_press(v2);
+            voice_release(piano + 47);
         } else if (i == 3*48000) {
-            voice_release(v2);
-            voice_press(v3);
+            //voice_release(v2);
+            //voice_press(v3);
         } else if (i == 4*48000) {
-            voice_release(v3);
-            voice_press(v4);
+            //voice_release(v3);
+            //voice_press(v4);
         } else if (i == 5*48000) {
-            voice_release(v4);
-            voice_press(v5);
+            //voice_release(v4);
+            //voice_press(v5);
         } else if (i == 6*48000) {
-            voice_release(v5);
-            voice_press(v6);
+            //voice_release(v5);
+            //voice_press(v6);
         } else if (i == 7*48000) {
-            voice_release(v6);
-            voice_press(v7);
+            //voice_release(v6);
+            //voice_press(v7);
         } else if (i == 8*48000) {
-            voice_release(v7);
-            voice_press(v8);
+            //voice_release(v7);
+            //voice_press(v8);
         } else if (i == 9*48000) {
-            voice_release(v8);
+            //voice_release(v8);
         }
 
-        // dumb I know but hang with me
-        LRSample lrs = voice_step(v1);
-        *run += lrs.left;
-        *rrun += lrs.right;
-        lrs = voice_step(v2);
-        *run += lrs.left;
-        *rrun += lrs.right;
-        lrs = voice_step(v3);
-        *run += lrs.left;
-        *rrun += lrs.right;
-        lrs = voice_step(v4);
-        *run += lrs.left;
-        *rrun += lrs.right;
-        lrs = voice_step(v5);
-        *run += lrs.left;
-        *rrun += lrs.right;
-        lrs = voice_step(v6);
-        *run += lrs.left;
-        *rrun += lrs.right;
-        lrs = voice_step(v7);
-        *run += lrs.left;
-        *rrun += lrs.right;
-        lrs = voice_step(v8);
-        *run += lrs.left;
-        *rrun += lrs.right;
+        for (u16 i = 0; i < PIANO_KEYS; i++) {
+            LRSample lrs = voice_step(piano + i);
+            *run += lrs.left;
+            *rrun += lrs.right;
+            
+        }
 
         run++;
         rrun++;

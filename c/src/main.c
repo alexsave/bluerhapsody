@@ -5,6 +5,7 @@
 #include <math.h>
 
 #include "types.h"
+#include "note.h"
 #include "meter.h"
 #include "wav.h"
 #include "voice.h"
@@ -174,6 +175,15 @@ int main(int argc, char* argv[]){
 
     f64 octave = 27.5;
 
+    // these are indexes on piano lol
+    u16 A0 = 0;
+    u16 A1 = 11;
+    u16 A2 = 23;
+    u16 A3 = 35;
+    u16 A4 = 47;
+    u16 AS4 = 48;
+    u16 B4 = 49;
+
     for (u16 i = 0; i < PIANO_KEYS; i++) {
         if (i%12 == 0) {
             // it's an A, reset
@@ -186,44 +196,76 @@ int main(int argc, char* argv[]){
         note *= SEMITONE_MULT;
     }
 
+    u32 note_count = 2;
 
-    
+    Note * notes = calloc(note_count, sizeof(Note));
+
+    //(*notes)[0] = { .index = A4, .start = 16, .duration = 1};
+    //notes[1] = { .index = AS4, .start = 32, .duration = 1};
+    *(notes + 0) = *note_init(A4, 16, 1);
+    *(notes + 1) = *note_init(AS4, 32, 1);
+
+
+    for (u32 i = 0; i < note_count; i++) {
+        Note* n = notes + i;
+        n->finish = n->start + n->duration;
+    }
+
+    // in per minute lol
+    u16 BPM = 120;
+
+
+    // only goes up
+    u16 press_index = 0;
+    u16 release_index = 0;
+
+
     f64* run = left;
     f64* rrun = right;
-    
+
+    //SAMPLE_FREQUENCY * BPM / 60 
+
+    //f64 samples_per_sixteenth = SAMPLE_FREQUENCY * 60 / BPM / 4;
+
+    f64 sixteenths_per_sample = (f64)(BPM * 4) / (f64)(SAMPLE_FREQUENCY * 60);
+
+    //i / samples_per_sixteenth
+
+    //i * BPM * 4 / SAMPLE_FREQUENCY / 60;
+
+
     for (u32 i = 0; i < NUM_SAMPLES; i++) {
-        //printf("%d\n", i);
-        if (i == 48000) {
-            voice_press(piano + 47);
-        } else if (i == 2*48000) {
-            voice_release(piano + 47);
-        } else if (i == 3*48000) {
-            //voice_release(v2);
-            //voice_press(v3);
-        } else if (i == 4*48000) {
-            //voice_release(v3);
-            //voice_press(v4);
-        } else if (i == 5*48000) {
-            //voice_release(v4);
-            //voice_press(v5);
-        } else if (i == 6*48000) {
-            //voice_release(v5);
-            //voice_press(v6);
-        } else if (i == 7*48000) {
-            //voice_release(v6);
-            //voice_press(v7);
-        } else if (i == 8*48000) {
-            //voice_release(v7);
-            //voice_press(v8);
-        } else if (i == 9*48000) {
-            //voice_release(v8);
+
+        // in 1/16th notes
+        // truncated to last 1/16th note
+        // that 60 comes from 60 s per min, the 4 comes from 4 16th in a quarter note
+        u16 current_beat = (f64)(i) * sixteenths_per_sample;
+        //printf("current beat %d i %d\n", current_beat, i);
+
+        while (press_index < note_count && notes[press_index].start == current_beat) {
+            voice_press(piano + notes[press_index].index);
+            press_index++;
+        } 
+
+        while (release_index < note_count && notes[release_index].finish == current_beat) {
+            voice_release(piano + notes[release_index].index);
+            release_index++;
+        } 
+
+        if (press_index < note_count && notes[press_index].start < current_beat ){
+            printf("somehow we misssed a note, might be out of order start %d %d\n", current_beat, press_index);
+            exit(1);
+        }
+        if( release_index < note_count && notes[release_index].finish < current_beat) {
+            printf("somehow we misssed a note, might be out of order finish %d\n", current_beat);
+            exit(1);
         }
 
         for (u16 i = 0; i < PIANO_KEYS; i++) {
             LRSample lrs = voice_step(piano + i);
             *run += lrs.left;
             *rrun += lrs.right;
-            
+
         }
 
         run++;
@@ -256,11 +298,11 @@ int main(int argc, char* argv[]){
     }
 
     printf("min %f max %f\n", min, max);
-    
+
     if (min * -1.0 > max)
         max = -1.0 * min;
-    
-    
+
+
     f64 scaled_amplitude = effective_amplitude / max;
     printf("scaled amp %f\n", scaled_amplitude);
 

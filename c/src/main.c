@@ -40,7 +40,6 @@ int main(int argc, char* argv[]){
         }
     }
 
-    void* wav = write_headers();
 
     sf_reserve();
 
@@ -73,13 +72,9 @@ int main(int argc, char* argv[]){
 
     u16 note_duration_ms = 5000;
 
-    f64* left = calloc(sizeof(f64), NUM_SAMPLES);
-    f64* right = calloc(sizeof(f64), NUM_SAMPLES);
 
     // just do A4 for now
 
-    f64* l = left;
-    f64* r = right;
 
 
     // 16 s in I hear something - roughly 32Hz
@@ -132,20 +127,41 @@ int main(int argc, char* argv[]){
     // [position]: ([note char][optional #]?[optional octave number]?[optional duration]?)+
     PQ* events = pq_init();
     //
-    parse_stream(stream, events);
+    u64 beats = parse_stream(stream, events);
 
     // in per minute lol
-    u16 BPM = 60;
+    u16 BPM = 55;
 
+    // bpm = beat / 60s
+    // bpm / beat * 60 = s
+
+    u64 sec = (5 * beats) / BPM;
+
+    // headroom, let releases play
+    sec += 2;
+
+
+    // 
+    //sec = 15;
+
+    u32 num_samples = sec * SAMPLE_FREQUENCY;
+
+    f64* left = calloc(sizeof(f64), num_samples);
+    f64* right = calloc(sizeof(f64), num_samples);
+    
+// now we can make files, now that we have seconds
+    void* wav = write_headers(sec);
 
     f64* run = left;
     f64* rrun = right;
 
+    f64* l = left;
+    f64* r = right;
 
     f64 fortyeighths = (f64)(BPM * 4 * 3) / (f64)(SAMPLE_FREQUENCY * 60);
 
 
-    for (u32 i = 0; i < NUM_SAMPLES; i++) {
+    for (u32 i = 0; i < num_samples; i++) {
 
         u64 event = pq_peek(events);
         // so, empty
@@ -184,7 +200,7 @@ int main(int argc, char* argv[]){
 
     l = left; 
     r = right;
-    for ( ; r < right + NUM_SAMPLES;)  {
+    for ( ; r < right + num_samples;)  {
         value = *r;
         if (value < min)
             min = value;
@@ -212,7 +228,7 @@ int main(int argc, char* argv[]){
     // scale entire thing down
     r = right;
     l = left;
-    for ( ; l < left + NUM_SAMPLES;) {
+    for ( ; l < left + num_samples;) {
         *l *= scaled_amplitude;
         *r *= scaled_amplitude;
         l++;
@@ -220,7 +236,7 @@ int main(int argc, char* argv[]){
     }
 
 
-    write_wav(left, right, wav, "m_04_arpeggio.wav");
+    write_wav(left, right, wav, "m_04_arpeggio.wav", sec);
 
     sf_free();
 

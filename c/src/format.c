@@ -7,10 +7,14 @@
 
 // left will be mono in case of channel count == 1
 // pass in f64s, let this turn it into whatever
-void write_samples(f64* left, f64* right, u8* out) {
+void write_samples(f64* left, f64* right, u8* out, u16 seconds) {
+
+    u32 num_samples = SAMPLE_FREQUENCY * seconds;
+    
+
     // lets just look at that same spot as in the react ui
     if (SAMPLE_BITS == 16) {
-        for (u32 i = 0; i < NUM_SAMPLES; i++) {
+        for (u32 i = 0; i < num_samples; i++) {
             i16 sample_amplitude = (*left) * (1 << 15);
             *out = sample_amplitude & 255;
             *(out + 1) = sample_amplitude >> 8;
@@ -29,7 +33,7 @@ void write_samples(f64* left, f64* right, u8* out) {
 
         }   
     } else if (SAMPLE_BITS == 8) {
-        for (u32 i = 0; i < NUM_SAMPLES; i++) {
+        for (u32 i = 0; i < num_samples; i++) {
             u8 sample_amplitude = ((*left)+ 1.0)*128;
             *out = sample_amplitude;
             if (CHANNEL_COUNT == 2) {
@@ -46,8 +50,12 @@ void write_samples(f64* left, f64* right, u8* out) {
 }
 
 // returns wav ready to go
-void* write_headers() {
-    void* wav = malloc(REAL_FILE_SIZE);
+void* write_headers(u16 seconds) {
+    u32 num_samples = SAMPLE_FREQUENCY * seconds;
+    u32 data_bytes = (CHANNEL_COUNT * num_samples * SAMPLE_BITS) / 8;
+    u32 real_file_size = sizeof(RiffChunk) + sizeof(FormatChunk) + sizeof(DataChunk) + data_bytes;
+
+    void* wav = malloc(real_file_size);
 
     RiffChunk * rf = (RiffChunk*)wav;
     rf->fileTypeBlocID = (((((0x46 << 8) + 0x46) << 8) + 0x49) << 8) + 0x52;
@@ -70,19 +78,24 @@ void* write_headers() {
     DataChunk * dc = (DataChunk*)(wav + sizeof(RiffChunk) + sizeof(FormatChunk));
     dc->dataBlocID = (((((0x61 << 8) + 0x74) << 8) + 0x61) << 8) + 0x64;
 
-    dc->dataSize = DATA_BYTES;
+    dc->dataSize = data_bytes;
 
     // only FileFormatID from RiffChunk is used here
     // "Overall file size minus 8 bytes"
-    rf->fileSize = REAL_FILE_SIZE - 8;
+    rf->fileSize = real_file_size - 8;
 
     return wav;
 }
 
-void write_wav(f64* left, f64* right, void* wav, char* filename) {
+void write_wav(f64* left, f64* right, void* wav, char* filename, u16 seconds) {
     u8* sampled_data = (u8*)(wav + sizeof(RiffChunk) + sizeof(FormatChunk) + sizeof(DataChunk));
+
+    RiffChunk * rf = (RiffChunk*)wav;
+    u32 real_file_size = rf->fileSize + 8;
+
+
     // DO NOT pass values not between -1 and 1 to this
-    write_samples(left, right, sampled_data);
+    write_samples(left, right, sampled_data, seconds);
 
 
     // E, F, F#, G, G#, A, A#, B, C, C#, D, D#
@@ -92,7 +105,7 @@ void write_wav(f64* left, f64* right, void* wav, char* filename) {
     if (!file){
         exit(1);
     }
-    fwrite((const void *)wav,  sizeof(u8), REAL_FILE_SIZE, file);
+    fwrite((const void *)wav,  sizeof(u8), real_file_size, file);
 
     fclose(file);
 }

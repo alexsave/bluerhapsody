@@ -7,7 +7,8 @@
 #include "constants.h"
 #include "note.h"
 
-void parse_stream(char* stream, PQ* events) {
+// returns how many beats in this thing
+u64 parse_stream(char* stream, PQ* events) {
 
     u8 in_paren = 0;
 
@@ -233,5 +234,5 @@ void parse_stream(char* stream, PQ* events) {
         }
     }
 
-
+    return current_beat;
 }

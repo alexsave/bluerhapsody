@@ -68,8 +68,10 @@ f64 sine(f64 phase) {
 }
 
 f64 white(f64 phase) {
-    u64 p = phase;
-    // what is this going to do? no idea
+    // this is super fucking cool btw
+    //u64 p = phase;
+
+    u64 p = *(u64*)(&phase);
     rand_next(&p);
 
     p &= MAX_U32;

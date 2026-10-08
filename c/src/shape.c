@@ -30,6 +30,10 @@ f64 sf_next() {
 }
 
 f64 sawtooth(f64 phase, u16 levels) {
+    if (1) {
+        return (fmod(phase/ (2.0*M_PI), 1.0) - 0.5) * 2.0;
+    }
+
     // this gets that first sin(x)
     f64 sum = sf_init(phase);
 
@@ -41,6 +45,13 @@ f64 sawtooth(f64 phase, u16 levels) {
 }
 
 f64 square(f64 phase, u16 levels) {
+    if (1) {
+        f64 i = (fmod(phase/ (2.0*M_PI), 1.0) - 0.5) * 2.0;
+        if (i <= 0.0)
+            return -1.0;
+        return 1.0;
+    }
+
     f64 sum = sf_init(phase);
     for (u16 n = 3; n <= levels; n+=2) {
         sf_next(); // "2"
@@ -50,6 +61,12 @@ f64 square(f64 phase, u16 levels) {
 }
 
 f64 triangle(f64 phase, u16 levels) {
+    if (1) {
+        f64 i = (fmod(phase/ (2.0*M_PI), 1.0) - 0.5) * 2.0;
+        if (i <= 0.0)
+            return (i+.5)*2.0;
+        return (i-.5)*-2.0;
+    }
     f64 sum = sf_init(phase);
     for (u16 n = 3; n <= levels; n+=2) {
         sf_next();

@@ -332,7 +332,7 @@ void spectrum(char* filename) {
 
         // let's start winding
         // this is probably the computational hotspot
-        f64 base_angle = b / bin_count;
+        //f64 base_angle = b / bin_count;
 
         // i cringe at the O(n^2) here
         for (u32 s = 0; s < sample_count; s++) {

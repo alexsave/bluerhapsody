@@ -54,7 +54,7 @@ Cpx* fft(f64* channel, u32 sample_count, u64* bin_count, u8 hann_window) {
 
     // hann window
     if (hann_window == 1) {
-        f64 scaling = M_PI / sample_count;
+        //f64 scaling = M_PI / sample_count;
         f64 si;
         for (u32 i = 0; i < sample_count; i++) {
             si = sin(M_PI * i / sample_count);

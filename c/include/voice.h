@@ -48,7 +48,9 @@ typedef struct Voice {
     f64 pan_end;
     f64 pan_ms;
     f64 time_into_pan_ms;
-    
+
+    f64 phase_bump;
+
 } Voice;
 
 

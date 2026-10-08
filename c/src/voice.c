@@ -33,6 +33,8 @@ Voice* voice_init(u32 sample_rate, u8 wave_type, f64 frequency, f64 attack_ms, f
     voice->pan_end = 0.0;
     voice->time_into_pan_ms = 0.0;
 
+    voice->phase_bump = 2.0 * M_PI * voice->voice_frequency / voice->sample_rate;
+
     return voice;
 }
 
@@ -66,6 +68,22 @@ void voice_release(Voice* voice) {
     voice->time_into_stage_ms = 0.0;
 }
 
+void pan_update(Voice* voice) {
+    if(voice->pan_ms != 0.0) {
+        // ok now another phase, stereo
+        voice->time_into_pan_ms += 1000.0 / voice->sample_rate;
+        if(voice->time_into_pan_ms >= voice->pan_ms) {
+            // stop it
+            voice->pan_ms = 0.0;
+            voice->time_into_pan_ms = 0.0;
+        } else {
+            // not done yet
+            voice->pan_position = voice->pan_start + (voice->pan_end - voice->pan_start) * (voice->time_into_pan_ms / voice->pan_ms);
+        }
+    }
+    
+}
+
 // one sample rate at a time
 LRSample voice_step(Voice* voice) {
     // frequency and sample_rate
@@ -77,18 +95,26 @@ LRSample voice_step(Voice* voice) {
 
     // each is Hz
     //printf("update by %f (%f/%f)\n", (voice->voice_frequency / voice->sample_rate), voice->voice_frequency, voice->sample_rate);
-    voice->phase += 2.0 * M_PI * voice->voice_frequency / voice->sample_rate;
-    voice->time_into_stage_ms += 1000.0 / voice->sample_rate;
     // wait it woulb e better to keep track of how many samples we are into the 
 
     // default really high
-    f64 end_of_stage_ms = 1000*60*60*24;
     // default same stage
-    u8 next_stage = voice->envelope_stage;
 
     if (voice->envelope_stage == STAGE_OFF) {
         // nothing lol
+        pan_update(voice);
+        LRSample lrs = {
+            .left = 0.0,
+            .right = 0.0
+        };
+        return lrs;
+
     } else {
+        voice->phase += voice->phase_bump;
+        voice->time_into_stage_ms += 1000.0 / voice->sample_rate;
+        f64 end_of_stage_ms = 1000*60*60*24;
+        u8 next_stage = voice->envelope_stage;
+
         if (voice->envelope_stage == STAGE_ATTACK) {
             end_of_stage_ms = voice->attack_ms;
             next_stage = STAGE_DECAY;
@@ -115,27 +141,8 @@ LRSample voice_step(Voice* voice) {
 
     //printf("current_ampl %f raw %f phase %f\n", current_ampl(voice), sin(voice->phase), voice->phase);
 
+    pan_update(voice);
 
-
-    // ok now another phase, stereo
-    voice->time_into_pan_ms += 1000.0 / voice->sample_rate;
-    if(voice->time_into_pan_ms >= voice->pan_ms) {
-        // stop it
-        voice->pan_ms = 0.0;
-        voice->time_into_pan_ms = 0.0;
-    } else {
-        // not done yet
-        voice->pan_position = voice->pan_start + (voice->pan_end - voice->pan_start) * (voice->time_into_pan_ms / voice->pan_ms);
-    }
-
-    if (voice->envelope_stage == STAGE_OFF) {
-        // skip the sin stuff
-        LRSample lrs = {
-            .left = 0.0,
-            .right = 0.0
-        };
-        return lrs;
-    }
 
     f64 raw;
     if (voice->wave_type == TYPE_SIN) 
@@ -157,7 +164,6 @@ LRSample voice_step(Voice* voice) {
     //-1 is like max left, so  first
 
     f64 angle = ((voice->pan_position + 1.0) * M_PI / 4.0);
-
 
     // maybe it would be easier to do 0 to 1?
     // nah -1 and 1 makes more sense

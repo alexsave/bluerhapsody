@@ -11,6 +11,7 @@
 #include "meter.h"
 #include "wav.h"
 #include "voice.h"
+#include "shape.h"
 
 #include "fft.h"
 #include "pq.h"
@@ -125,6 +126,7 @@ int main(int argc, char* argv[]){
 
     void* wav = write_headers();
 
+    sf_reserve();
 
     f32 gain = -12.0;
 
@@ -314,6 +316,7 @@ int main(int argc, char* argv[]){
 
     fclose(file);
 
+    sf_free();
 
     free(wav);
     free(left);

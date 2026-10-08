@@ -231,11 +231,12 @@ int main(int argc, char* argv[]){
 
     for (u32 i = 0; i < NUM_SAMPLES; i++) {
 
-        if(!pq_is_empty(events)) {
+        u64 event = pq_peek(events);
+        // so, empty
+        if(event != MAX_U64) {
 
             u16 current_beat = (f64)(i) * fortyeighths;
 
-            u64 event = pq_peek(events);
             u64 event_beat = event >> 48;
             u64 event_index = event & MAX_U16;
 
@@ -250,10 +251,7 @@ int main(int argc, char* argv[]){
         }
 
         for (u16 i = 0; i < PIANO_KEYS; i++) {
-            LRSample lrs = voice_step(piano + i);
-            *run += lrs.left;
-            *rrun += lrs.right;
-
+            voice_step(piano + i, run, rrun);
         }
 
         run++;
@@ -268,21 +266,23 @@ int main(int argc, char* argv[]){
     f64 max = *left;
     f64 value = *left;
 
-    for (f64 * r = right; r < right + NUM_SAMPLES; r++) {
+    l = left; 
+    r = right;
+    for ( ; r < right + NUM_SAMPLES;)  {
         value = *r;
         if (value < min)
             min = value;
         else if (value > max)
             max = value;
-    }
-    printf("min %f max %f\n", min, max);
 
-    for (f64 * r = left; r < left + NUM_SAMPLES; r++) {
-        value = *r;
+        value = *l;
         if (value < min)
             min = value;
         else if (value > max)
             max = value;
+
+        l++;
+        r++;
     }
 
     printf("min %f max %f\n", min, max);
@@ -290,15 +290,18 @@ int main(int argc, char* argv[]){
     if (min * -1.0 > max)
         max = -1.0 * min;
 
-
     f64 scaled_amplitude = effective_amplitude / max;
     printf("scaled amp %f\n", scaled_amplitude);
 
     // scale entire thing down
-    for (l = left; l < left + NUM_SAMPLES; l++)
+    r = right;
+    l = left;
+    for ( ; l < left + NUM_SAMPLES;) {
         *l *= scaled_amplitude;
-    for (r = right; r < right + NUM_SAMPLES; r++)
         *r *= scaled_amplitude;
+        l++;
+        r++;
+    }
 
 
     u8* sampled_data = (u8*)(wav + sizeof(RiffChunk) + sizeof(FormatChunk) + sizeof(DataChunk));

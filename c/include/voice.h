@@ -68,7 +68,8 @@ void voice_release(Voice* voice);
 
 // would be nice to take something like "samples since start", as constnatly adding to phase will hurt
 // but jumping phase will also cause gaps if we change frequency so this is better
-LRSample voice_step(Voice* voice);
+//LRSample voice_step(Voice* voice);
+void voice_step(Voice* voice, f64* left, f64* right);
 
 void voice_pan(Voice* voice, f64 to, f64 pan_ms);
 

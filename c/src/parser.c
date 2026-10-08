@@ -39,20 +39,24 @@ void parse_stream(char* stream, PQ* events) {
     u64 group_first_start = 0;
 
     u8 first_of_group = 0;
+    u8 rest = 0;
 
     while(*ptr != 0) {
         char c = *ptr;
         if (c == '(' || c == ')' || c == ' ' || c == '|') {
             //printf("last note ended but %d %d\n", note_mod, dur);
             // last note definitely just ended
-            if(note_mod != MAX_U8){
+            if (rest) {
+                current_beat += dur;
+                rest = 0;
+            } else if(note_mod != MAX_U8){
                 u16 index = note_mod + octave_n* 12;
                 if(dur != 0){
                     if(!in_paren){
                         u64 s = ((u64)current_beat << 48) | PRESS_BIT | index;
                         u64 f = ((u64)(current_beat+dur) << 48) | index;
 
-                        printf("note detected, from %d to %d, index %d\n", current_beat, current_beat+dur, index);
+                        //printf("note detected, from %d to %d, index %d\n", current_beat, current_beat+dur, index);
 
                         pq_push(events, s);
                         pq_push(events, f);
@@ -62,7 +66,7 @@ void parse_stream(char* stream, PQ* events) {
                         u64 s = ((u64)group_first_start << 48) | PRESS_BIT | index;
                         u64 f = ((u64)(group_first_start+dur) << 48) | index;
 
-                        printf("note detected, from %d to %d, index %d\n", group_first_start, group_first_start+dur, index);
+                        //printf("note detected, from %d to %d, index %d\n", group_first_start, group_first_start+dur, index);
 
                         pq_push(events, s);
                         pq_push(events, f);
@@ -112,6 +116,15 @@ void parse_stream(char* stream, PQ* events) {
             else if (c == 'G')
                 note_mod = 10;
             parser_state = NOTE;
+        } else if (c == 'R') {
+            // rest, takes a duration like a note
+            rest = 1;
+            parser_state = NOTE;
+        } else if (c == '.') {
+            // dotted
+            dur += dur / 2;
+            if (in_paren)
+                group_first_dur = dur;
         } else if (c == '(') {
             if (parser_state != SPACE) {
                 printf("invalid format, no space before parenthesis\n");
@@ -202,7 +215,7 @@ void parse_stream(char* stream, PQ* events) {
                 u64 s = ((u64)current_beat << 48) | PRESS_BIT | index;
                 u64 f = ((u64)(current_beat+dur) << 48) | index;
 
-                printf("note detected, from %d to %d, index %d\n", current_beat, current_beat+dur, index);
+                //printf("note detected, from %d to %d, index %d\n", current_beat, current_beat+dur, index);
 
                 pq_push(events, s);
                 pq_push(events, f);
@@ -212,7 +225,7 @@ void parse_stream(char* stream, PQ* events) {
                 u64 s = ((u64)start_of_group << 48) | PRESS_BIT | index;
                 u64 f = ((u64)(start_of_group+dur) << 48) | index;
 
-                printf("note detected, from %d to %d, index %d\n", start_of_group, start_of_group+dur, index);
+                //printf("note detected, from %d to %d, index %d\n", start_of_group, start_of_group+dur, index);
 
                 pq_push(events, s);
                 pq_push(events, f);

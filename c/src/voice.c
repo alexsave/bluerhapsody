@@ -85,7 +85,8 @@ void pan_update(Voice* voice) {
 }
 
 // one sample rate at a time
-LRSample voice_step(Voice* voice) {
+// add samples to left and rigth
+void voice_step(Voice* voice, f64* left, f64* right) {
     // frequency and sample_rate
     // lets see
     // if frequency was 2hz, and sample rate was 8hz
@@ -103,37 +104,38 @@ LRSample voice_step(Voice* voice) {
     if (voice->envelope_stage == STAGE_OFF) {
         // nothing lol
         pan_update(voice);
-        LRSample lrs = {
-            .left = 0.0,
-            .right = 0.0
-        };
-        return lrs;
+        //LRSample lrs = {
+            //.left = 0.0,
+            //.right = 0.0
+        //};
+        //return lrs;
+        return;
 
-    } else {
-        voice->phase += voice->phase_bump;
-        voice->time_into_stage_ms += 1000.0 / voice->sample_rate;
-        f64 end_of_stage_ms = 1000*60*60*24;
-        u8 next_stage = voice->envelope_stage;
+    } 
 
-        if (voice->envelope_stage == STAGE_ATTACK) {
-            end_of_stage_ms = voice->attack_ms;
-            next_stage = STAGE_DECAY;
-        } else if (voice->envelope_stage == STAGE_DECAY) {
-            end_of_stage_ms = voice->decay_ms;
-            next_stage = STAGE_SUSTAIN;
-        } else if (voice->envelope_stage == STAGE_SUSTAIN) {
-            //end_of_stage_ms = voice->decay_ms;
-            // it ends when yo let go
-        } else if (voice->envelope_stage == STAGE_RELEASE) {
-            end_of_stage_ms = voice->release_ms;
-            next_stage = STAGE_OFF;
-        }
+    voice->phase += voice->phase_bump;
+    voice->time_into_stage_ms += 1000.0 / voice->sample_rate;
+    f64 end_of_stage_ms = 1000*60*60*24;
+    u8 next_stage = voice->envelope_stage;
 
-        if (voice->time_into_stage_ms >= end_of_stage_ms) {
-            //swap the stage
-            voice->envelope_stage = next_stage;
-            voice->time_into_stage_ms = 0.0;
-        }
+    if (voice->envelope_stage == STAGE_ATTACK) {
+        end_of_stage_ms = voice->attack_ms;
+        next_stage = STAGE_DECAY;
+    } else if (voice->envelope_stage == STAGE_DECAY) {
+        end_of_stage_ms = voice->decay_ms;
+        next_stage = STAGE_SUSTAIN;
+    } else if (voice->envelope_stage == STAGE_SUSTAIN) {
+        //end_of_stage_ms = voice->decay_ms;
+        // it ends when yo let go
+    } else if (voice->envelope_stage == STAGE_RELEASE) {
+        end_of_stage_ms = voice->release_ms;
+        next_stage = STAGE_OFF;
+    }
+
+    if (voice->time_into_stage_ms >= end_of_stage_ms) {
+        //swap the stage
+        voice->envelope_stage = next_stage;
+        voice->time_into_stage_ms = 0.0;
     }
 
     // ok now emit
@@ -167,11 +169,8 @@ LRSample voice_step(Voice* voice) {
 
     // maybe it would be easier to do 0 to 1?
     // nah -1 and 1 makes more sense
-    LRSample lrs = {
-        .left = unpanned * cos(angle),
-        .right = unpanned * sin(angle)
-    };
-    return lrs;
+    *left += unpanned * cos(angle);
+    *right += unpanned * sin(angle);
 }
 
 void voice_pan(Voice* voice, f64 to, f64 pan_ms) {

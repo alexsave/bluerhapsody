@@ -69,8 +69,10 @@ void pq_push(PQ* pq, uint64_t event) {
 }
 
 // ez one
-// undefined behavior if empty, ie pq->current == 1
 uint64_t pq_peek(PQ* pq){
+    if (pq->current == 1) {
+        return MAX_U64;
+    }
     // should we return zero?
     // genuinely don't know what the fastest option is
     // maybe pq should handle it, maybe the callers should (keepign this function lightweight)

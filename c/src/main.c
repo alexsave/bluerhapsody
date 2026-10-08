@@ -70,7 +70,6 @@ int main(int argc, char* argv[]){
     const f64 SEMITONE_MULT = pow(2.0, 1.0/12.0);
 
 
-    u16 note_duration_ms = 5000;
 
 
     // just do A4 for now
@@ -100,7 +99,7 @@ int main(int argc, char* argv[]){
             octave *= 2.0;
         }
 
-        temp = voice_init(SAMPLE_FREQUENCY, TYPE_WHITE_NOISE, note, 50, 50, .5, 500);
+        temp = voice_init(SAMPLE_FREQUENCY, TYPE_TRIANGLE, note, 50, 50, .5, 500);
         memcpy(piano + i, temp, sizeof(Voice));
         note *= SEMITONE_MULT;
     }

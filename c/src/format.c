@@ -100,7 +100,7 @@ void write_wav(f64* left, f64* right, void* wav, char* filename, u16 seconds) {
 
     // E, F, F#, G, G#, A, A#, B, C, C#, D, D#
 
-    FILE * file = fopen("m04_arpeggio.wav" , "wb");
+    FILE * file = fopen(filename , "wb");
 
     if (!file){
         exit(1);

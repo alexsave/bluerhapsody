@@ -2,7 +2,9 @@
 #import <stdlib.h>
 
 #import "shape.h"
+#import "constants.h"
 #import "types.h"
+#import "rand.h"
 
 // given phase, give me triangle wave
 // and phase here is baseically note * 2 * M_PI * j/ SAMPLE_FREQUENCY already
@@ -63,6 +65,16 @@ f64 triangle(f64 phase, u16 levels) {
 
 f64 sine(f64 phase) {
     return sin(phase);
+}
+
+f64 white(f64 phase) {
+    u64 p = phase;
+    // what is this going to do? no idea
+    rand_next(&p);
+
+    p &= MAX_U32;
+
+    return (((f64)(2*p) / (f64)MAX_U32) - 1.0);
 }
 
 void sf_reserve() {

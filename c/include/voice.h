@@ -1,4 +1,3 @@
-
 #ifndef VOICE_H
 #define VOICE_H
 
@@ -10,11 +9,6 @@ static const u8 STAGE_ATTACK = 1;
 static const u8 STAGE_DECAY = 2;
 static const u8 STAGE_SUSTAIN = 3;
 static const u8 STAGE_RELEASE = 4;
-
-static const u8 TYPE_SIN = 0;
-static const u8 TYPE_TRIANGLE = 1;
-static const u8 TYPE_SQUARE = 2;
-static const u8 TYPE_SAWTOOTH = 3;
 
 typedef struct LRSample {
     f64 left;

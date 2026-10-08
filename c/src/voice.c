@@ -104,11 +104,7 @@ void voice_step(Voice* voice, f64* left, f64* right) {
     if (voice->envelope_stage == STAGE_OFF) {
         // nothing lol
         pan_update(voice);
-        //LRSample lrs = {
-            //.left = 0.0,
-            //.right = 0.0
-        //};
-        //return lrs;
+
         return;
 
     } 
@@ -145,7 +141,6 @@ void voice_step(Voice* voice, f64* left, f64* right) {
 
     pan_update(voice);
 
-
     f64 raw;
     if (voice->wave_type == TYPE_SIN) 
         raw = sine(voice->phase);
@@ -155,6 +150,8 @@ void voice_step(Voice* voice, f64* left, f64* right) {
         raw = square(voice->phase, 8);
     else if (voice->wave_type == TYPE_SAWTOOTH) 
         raw = sawtooth(voice->phase, 8);
+    else if (voice->wave_type == TYPE_WHITE_NOISE) 
+        raw = white(voice->phase);
 
     // ok now lets try to be dumb about it
 

@@ -22,7 +22,6 @@ uint64_t* rand_init(uint64_t seed) {
 
     *rand = seed;
 
-
     return rand;
 }
 

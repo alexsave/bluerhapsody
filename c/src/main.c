@@ -91,7 +91,7 @@ int main(int argc, char* argv[]){
             octave *= 2.0;
         }
 
-        temp = voice_init(SAMPLE_RATE, BITCRUSH, note, 50, 50, .5, 100);
+        temp = voice_init(SAMPLE_RATE, SAW_POLYBLEP, note, 50, 50, .5, 100);
         memcpy(piano + i, temp, sizeof(Voice));
         note *= SEMITONE_MULT;
     }
@@ -154,10 +154,42 @@ int main(int argc, char* argv[]){
         rrun++;
     }
 
+    // "manual" sweep
+    u32 sweep_samples = 50000;
+    u32 increments = 100;
+    l = left;
+    r = right;
 
-    // lowpass?
-    lowpass(left, num_samples, .10);
-    lowpass(right, num_samples, .10);
+    for (u32 i = 1; i < increments; i++) {
+        f64 frac = (f64)i / (f64)increments;
+        // does lowpass affect l address? idk
+        lowpass(l, sweep_samples, frac);
+        lowpass(r, sweep_samples, frac);
+        l += sweep_samples;
+        r += sweep_samples;
+    }
+
+    for (u32 i = 1; i < increments; i++) {
+        f64 frac = (f64)i / (f64)increments;
+        // does lowpass affect l address? idk
+        lowpass(l, 1000, 1.0-frac);
+        lowpass(r, 1000, 1.0-frac);
+        l += 1000;
+        r += 1000;
+    }
+
+    for (u32 i = 1; i < increments; i++) {
+        f64 frac = (f64)i / (f64)increments;
+        // does lowpass affect l address? idk
+        lowpass(l, 1000, frac);
+        lowpass(r, 1000, frac);
+        l += 1000;
+        r += 1000;
+    }
+
+
+    //lowpass(left, num_samples, .10);
+    //lowpass(right, num_samples, .10);
 
 
     // idk, but lets scale it such that the highest peak is at this amplitude

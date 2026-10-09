@@ -14,6 +14,7 @@
 #include "shape.h"
 
 #include "fft.h"
+#include "fx.h"
 #include "format.h"
 #include "pq.h"
 
@@ -90,7 +91,7 @@ int main(int argc, char* argv[]){
             octave *= 2.0;
         }
 
-        temp = voice_init(SAMPLE_RATE, SAW_POLYBLEP, note, 50, 50, .5, 100);
+        temp = voice_init(SAMPLE_RATE, BITCRUSH, note, 50, 50, .5, 100);
         memcpy(piano + i, temp, sizeof(Voice));
         note *= SEMITONE_MULT;
     }
@@ -153,6 +154,12 @@ int main(int argc, char* argv[]){
         rrun++;
     }
 
+
+    // lowpass?
+    lowpass(left, num_samples, .10);
+    lowpass(right, num_samples, .10);
+
+
     // idk, but lets scale it such that the highest peak is at this amplitude
 
     f64 min = *left;
@@ -196,7 +203,7 @@ int main(int argc, char* argv[]){
         r++;
     }
 
-    write_wav(left, right, wav, "m05_osc_compare.wav", sec);
+    write_wav(left, right, wav, "m06_synth_voice.wav", sec);
 
     sf_free();
 

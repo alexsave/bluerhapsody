@@ -189,9 +189,39 @@ export const AudioView = () => {
                 context.fillRect(x, height-y, dx, 1);
             }
         }
+        context.font = "10px Arial";
+        context.fillStyle = "white";
+        context.strokeStyle = "white";      
 
+        // not quite
 
-          
+        // ok what do we know
+        // the 
+        // this should probably be computed int eh damn C
+        // but wasm isnt set correctly
+        // we have frequency, and we have windowSamples (count of them)
+
+        // if we have 8192 samples at frequency 48khz, we can detect... what exactly
+        // its a simple solution
+        // but the index 0 is zero frequency, index 1 is the slowest frequency we can detect, taking the entire span of 8192 samples
+        // thus 1/6 second ish? so 48khz/8192
+        // ok so thats wher ethe first frequency lies
+        // second is then 2 * 48khz / 8192
+        // all  so i * 48khz / 8192
+        // so these things are plotted at  Math.log2(i) / Math.log2(windowSamples)
+
+        // so to get the "i", we want to do 10 = i * 48khz/ 8192
+        // i = 10 / 48khz * 8192
+
+        
+        const add = (text, freq) => context.fillText(text, 0, height + 10/2 - Math.floor(Math.log2(freq * windowSamples / frequency ) * canvas.height / Math.log2(windowSamples)));
+        for (let i = 1; i < 20; i++ ){
+            add(i + "Hz", i);
+            add(i + "0Hz", i*10);
+            add(i + "00Hz", i*100);
+            add(i + "kHz", i*1000);
+            add(i + "0kHz", i*10000);
+        }
 
         Module._free(inBuffer);
         Module._free(lPtr);
@@ -205,21 +235,21 @@ export const AudioView = () => {
     return <div>
         <p>Blue Rhapsody UI</p> 
         <input 
-            type="file" 
-            accept="audio/*"
-            onChange={async e => {
-                const path = e.target.files[0];
-        
-                const reader = new FileReader();
-                reader.onload = async e => {
-                    let localRaw = e.target.result;
-                    setRaw(e.target.result);
-                    setReload(prev=> prev+1);
-                }
+        type="file" 
+        accept="audio/*"
+        onChange={async e => {
+            const path = e.target.files[0];
 
-                reader.readAsArrayBuffer(path);
-            }}
-        />
+            const reader = new FileReader();
+            reader.onload = async e => {
+                let localRaw = e.target.result;
+                setRaw(e.target.result);
+                setReload(prev=> prev+1);
+            }
+
+            reader.readAsArrayBuffer(path);
+        }}
+    />
         <p>{JSON.stringify(lValues.slice(0,100))}</p>
         <p>{data.length}</p>
         <input value={''+binCount} type="text" onChange={e => setBinCount(BigInt(e.target.value))} style={{border: '1px solid blue'}}/>
@@ -227,11 +257,11 @@ export const AudioView = () => {
         <input value={''+sampleCount} type="text" onChange={e => setSampleCount(+e.target.value)} style={{border: '1px solid blue'}}/>
         <canvas width={1000} height={1000} ref={canvasRef}/>
         <ScatterPlot width={600} height={600} data={data.slice(sampleStart, sampleStart + sampleCount)}/>
-  
-// very useful, take a look https://medium.com/@pdx.lucasm/canvas-with-react-js-32e133c05258
-//also -new Float64Array(Module.HEAPF64.buffer, ptr, count)
+
+        // very useful, take a look https://medium.com/@pdx.lucasm/canvas-with-react-js-32e133c05258
+        //also -new Float64Array(Module.HEAPF64.buffer, ptr, count)
 
 
-    </div>;
+        </div>;
 
 }

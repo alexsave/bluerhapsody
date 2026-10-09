@@ -157,10 +157,10 @@ void voice_step(Voice* voice, f64* left, f64* right) {
     else if (voice->wave_type == TRIANGLE_NAIVE) raw = triangle_naive(voice->phase);
     else if (voice->wave_type == SQUARE_SUM) raw = square(voice->phase, 3);
     else if (voice->wave_type == SQUARE_NAIVE) raw = square_naive(voice->phase);
-    else if (voice->wave_type == SQUARE_POLYBLEP) raw = square_polyblep(voice->phase);
+    else if (voice->wave_type == SQUARE_POLYBLEP) raw = square_polyblep(voice->phase, voice->phase_bump);
     else if (voice->wave_type == SAW_SUM) raw = sawtooth(voice->phase, 8);
     else if (voice->wave_type == SAW_NAIVE) raw = saw_naive(voice->phase);
-    else if (voice->wave_type == SAW_POLYBLEP) raw = saw_polyblep(voice->phase);
+    else if (voice->wave_type == SAW_POLYBLEP) raw = saw_polyblep(voice->phase, voice->phase_bump);
     else if (voice->wave_type == WHITE_NOISE) raw = white(voice->phase);
     else if (voice->wave_type == BITCRUSH) raw = bitcrush(voice->sum_phase);
 

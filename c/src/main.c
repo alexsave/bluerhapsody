@@ -61,9 +61,9 @@ int main(int argc, char* argv[]){
     // frequency means that it does 440 full rotations through circle in 1 second
     // thus y = sin(2pi*x)
     // thus y = sin(440 * 2pi*x)
-    // if we step through sample by sample, x will be i/SAMPLE_FREQ
+    // if we step through sample by sample, x will be i/SAMPLE_RATE
 
-    // i will go all the way up to SAMPLE_FREQ * DURATION
+    // i will go all the way up to SAMPLE_RATE * DURATION
 
     // now we can do fun stuff with sampled data
 
@@ -101,7 +101,7 @@ int main(int argc, char* argv[]){
             octave *= 2.0;
         }
 
-        temp = voice_init(SAMPLE_FREQUENCY, BITCRUSH, note/*lol*/, 50, 50, .5, 500);
+        temp = voice_init(SAMPLE_RATE, SAW_NAIVE, note/*lol*/, 50, 50, .5, 500);
         memcpy(piano + i, temp, sizeof(Voice));
         note *= SEMITONE_MULT;
     }
@@ -124,7 +124,7 @@ int main(int argc, char* argv[]){
     // 
     //sec = 15;
 
-    u32 num_samples = sec * SAMPLE_FREQUENCY;
+    u32 num_samples = sec * SAMPLE_RATE;
 
     f64* left = calloc(sizeof(f64), num_samples);
     f64* right = calloc(sizeof(f64), num_samples);
@@ -138,21 +138,21 @@ int main(int argc, char* argv[]){
     f64* l = left;
     f64* r = right;
 
-    f64 fortyeighths = (f64)(BPM * 4 * 3) / (f64)(SAMPLE_FREQUENCY * 60);
+    f64 fortyeighths = (f64)(BPM * 4 * 3) / (f64)(SAMPLE_RATE * 60);
 
 
     for (u32 i = 0; i < num_samples; i++) {
 
-        /*if (i == SAMPLE_FREQUENCY * 17) {
+        if (i == SAMPLE_RATE * 17) {
             for (u16 i = 0; i < PIANO_KEYS; i++) 
                 voice_set_type(piano + i, SAW_POLYBLEP);
-        } else if (i == SAMPLE_FREQUENCY * 34) {
+        } else if (i == SAMPLE_RATE * 35) {
             for (u16 i = 0; i < PIANO_KEYS; i++) 
                 voice_set_type(piano + i, SQUARE_NAIVE);
-        } else if (i == SAMPLE_FREQUENCY * 51) {
+        } else if (i == SAMPLE_RATE * 53) {
             for (u16 i = 0; i < PIANO_KEYS; i++) 
                 voice_set_type(piano + i, SQUARE_POLYBLEP);
-        }*/
+        }
 
         u64 event = pq_peek(events);
         // so, empty
@@ -226,7 +226,7 @@ int main(int argc, char* argv[]){
     }
 
 
-    write_wav(left, right, wav, "m04_arpeggio.wav", sec);
+    write_wav(left, right, wav, "m05_osc_compare.wav", sec);
 
     sf_free();
 

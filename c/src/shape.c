@@ -1,5 +1,6 @@
 #import <math.h>
 #import <stdlib.h>
+#import <stdio.h>
 
 #import "shape.h"
 #import "constants.h"
@@ -29,9 +30,6 @@ f64 sf_next() {
     return next;
 }
 
-f64 saw_naive(f64 phase) {
-    return (fmod(phase/ (2.0*M_PI), 1.0) - 0.5) * 2.0;
-}
 
 f64 sawtooth(f64 phase, u16 levels) {
     // this gets that first sin(x)
@@ -44,16 +42,7 @@ f64 sawtooth(f64 phase, u16 levels) {
     return sum * -2.0 / M_PI;
 }
 
-f64 saw_polyblep(f64 phase) {
-    return 0.0;
-}
 
-f64 square_naive(f64 phase) {
-    f64 i = (fmod(phase/ (2.0*M_PI), 1.0) - 0.5) * 2.0;
-    if (i <= 0.0)
-        return -1.0;
-    return 1.0;
-}
 
 f64 square(f64 phase, u16 levels) {
     f64 sum = sf_init(phase);
@@ -64,12 +53,87 @@ f64 square(f64 phase, u16 levels) {
     return sum * 4.0 / M_PI;
 }
 
-f64 square_polyblep(f64 phase) {
-    return 0.0;
+f64 saw_naive(f64 phase) {
+    return (phase/ M_PI - 1.0);
+}
+
+f64 saw_polyblep(f64 phase, f64 phase_delta) {
+    // not a fan of division...
+    f64 normalized_phase = phase / TWO_PI;
+
+    f64 delta = phase_delta / TWO_PI;
+
+    f64 naive = saw_naive(phase);
+
+    f64 poly_blep = 0.0;
+
+    if (normalized_phase <= delta) {
+        f64 t = (normalized_phase - 0.0) / delta;
+        // sample after
+        //f64 res = 2*t - t*t - 1.0;
+        f64 res = (2-t)*t - 1.0;
+        //printf("first sample after cliff, changing from %f to %f (phase: %f, t: %f, res: %f)\n", naive, (naive + -2.0 * res), phase, t, res);
+        poly_blep = res;
+    } else if (normalized_phase + delta >= 1.0) {
+        // sample before
+        f64 t = (normalized_phase - 1.0) / delta;
+        f64 res = (t+ 2.0)*t  + 1;
+        //printf("last sample before cliff, changing from %f to %f (phase: %f, t: %f, res: %f)\n", naive, (naive + -2.0 * res), phase, t, res);
+        poly_blep = res;
+    }
+    
+    // negative cuz falling edge biatch
+    return naive - poly_blep;
+}
+
+f64 square_naive(f64 phase) {
+    f64 i = phase/M_PI - 1.0;
+    if (i <= 0.0)
+        return 1.0;
+    return -1.0;
+}
+
+f64 square_polyblep(f64 phase, f64 phase_delta) {
+
+    f64 normalized_phase = phase / TWO_PI;
+
+    f64 delta = phase_delta / TWO_PI;
+
+    f64 naive = square_naive(phase);
+
+    f64 poly_blep = 0.0;
+
+
+    if (normalized_phase - delta <= 0) {
+        // right after rising edge
+        f64 t = (normalized_phase - 0.0) / delta;
+        f64 res = (2-t)*t - 1.0;
+        poly_blep = -res;
+    } else if (normalized_phase + delta >= 0.5 && normalized_phase <= 0.5) {
+        // right before falling edge
+        f64 t = (normalized_phase - 0.5) / delta;
+        f64 res = (t+ 2.0)*t  + 1;
+        poly_blep = res;
+    } else if (normalized_phase - delta <= 0.5 && normalized_phase >= 0.5) {
+        // right after falling edge
+        f64 t = (normalized_phase - 0.5) / delta;
+        f64 res = (2-t)*t - 1.0;
+        poly_blep = res;
+
+    } else if (normalized_phase + delta >= 1.0) {
+        // right before rising edge
+        f64 t = (normalized_phase - 1.0) / delta;
+        f64 res = (t+ 2.0)*t  + 1;
+        poly_blep = -res;
+
+
+    }
+
+    return naive - poly_blep;
 }
 
 f64 triangle_naive(f64 phase) {
-    f64 i = (fmod(phase/ (2.0*M_PI), 1.0) - 0.5) * 2.0;
+    f64 i = (phase/ (2.0*M_PI) - 0.5) * 2.0;
     if (i <= 0.0)
         return (i+.5)*2.0;
     return (i-.5)*-2.0;

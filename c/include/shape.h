@@ -34,10 +34,10 @@ static SinFast * SF_SCRATCH;
 
 f64 sawtooth(f64 phase, u16 levels);
 f64 saw_naive(f64 phase);
-f64 saw_polyblep(f64 phase);
+f64 saw_polyblep(f64 phase, f64 phase_delta);
 f64 square(f64 phase, u16 levels);
 f64 square_naive(f64 phase);
-f64 square_polyblep(f64 phase);
+f64 square_polyblep(f64 phase, f64 phase_delta);
 f64 triangle(f64 phase, u16 levels);
 f64 triangle_naive(f64 phase);
 f64 sine(f64 phase);

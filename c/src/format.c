@@ -4,12 +4,13 @@
 #include "format.h"
 #include "wav.h"
 #include "types.h"
+#include "constants.h"
 
 // left will be mono in case of channel count == 1
 // pass in f64s, let this turn it into whatever
 void write_samples(f64* left, f64* right, u8* out, u16 seconds) {
 
-    u32 num_samples = SAMPLE_FREQUENCY * seconds;
+    u32 num_samples = SAMPLE_RATE * seconds;
     
 
     // lets just look at that same spot as in the react ui
@@ -51,7 +52,7 @@ void write_samples(f64* left, f64* right, u8* out, u16 seconds) {
 
 // returns wav ready to go
 void* write_headers(u16 seconds) {
-    u32 num_samples = SAMPLE_FREQUENCY * seconds;
+    u32 num_samples = SAMPLE_RATE * seconds;
     u32 data_bytes = (CHANNEL_COUNT * num_samples * SAMPLE_BITS) / 8;
     u32 real_file_size = sizeof(RiffChunk) + sizeof(FormatChunk) + sizeof(DataChunk) + data_bytes;
 
@@ -69,11 +70,11 @@ void* write_headers(u16 seconds) {
 
     fc->audioFormat = 1;
     fc->nbrChannels = CHANNEL_COUNT;
-    fc->frequency = SAMPLE_FREQUENCY;
+    fc->frequency = SAMPLE_RATE;
     fc->bitsPerSample = SAMPLE_BITS;
 
     fc->bytePerBloc = (fc->nbrChannels * SAMPLE_BITS / 8);
-    fc->bytePerSec = SAMPLE_FREQUENCY * fc->bytePerBloc;
+    fc->bytePerSec = SAMPLE_RATE * fc->bytePerBloc;
 
     DataChunk * dc = (DataChunk*)(wav + sizeof(RiffChunk) + sizeof(FormatChunk));
     dc->dataBlocID = (((((0x61 << 8) + 0x74) << 8) + 0x61) << 8) + 0x64;

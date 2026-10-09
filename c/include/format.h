@@ -5,7 +5,6 @@
 #include "wav.h"
 
 static const u16 SAMPLE_BITS = 16; 
-static const u32 SAMPLE_FREQUENCY = 48000;
 
 static const u8 CHANNEL_COUNT = 2;
 

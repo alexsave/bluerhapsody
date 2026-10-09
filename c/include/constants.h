@@ -12,5 +12,8 @@ static const u8 MAX_U8 = 255;
 
 static const f64 TWO_PI = 2.0 * M_PI;
 
+static const u32 SAMPLE_RATE = 48000;
+
+
 #endif
 

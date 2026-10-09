@@ -3,6 +3,7 @@
 #import <math.h>
 
 #import "types.h"
+#import "constants.h"
 #import "shape.h"
 #import "voice.h"
 
@@ -10,6 +11,7 @@ Voice* voice_init(u32 sample_rate, u8 wave_type, f64 frequency, f64 attack_ms, f
     Voice* voice = malloc(sizeof(Voice));
 
     voice->phase = 0.0;
+    voice->sum_phase = 0.0;
     voice->envelope_stage = STAGE_OFF;
     voice->time_into_stage_ms = 0.0;
 
@@ -36,6 +38,10 @@ Voice* voice_init(u32 sample_rate, u8 wave_type, f64 frequency, f64 attack_ms, f
     voice->phase_bump = 2.0 * M_PI * voice->voice_frequency / voice->sample_rate;
 
     return voice;
+}
+
+void voice_set_type(Voice* voice, u8 wave_type) {
+    voice->wave_type = wave_type;
 }
 
 // like current amplitude irregardless of freq, only ADSR
@@ -110,6 +116,10 @@ void voice_step(Voice* voice, f64* left, f64* right) {
     } 
 
     voice->phase += voice->phase_bump;
+    voice->sum_phase += voice->phase_bump;
+    if (voice->phase >= TWO_PI) 
+        voice->phase -= TWO_PI;
+
     voice->time_into_stage_ms += 1000.0 / voice->sample_rate;
     f64 end_of_stage_ms = 1000*60*60*24;
     u8 next_stage = voice->envelope_stage;
@@ -142,16 +152,17 @@ void voice_step(Voice* voice, f64* left, f64* right) {
     pan_update(voice);
 
     f64 raw;
-    if (voice->wave_type == TYPE_SIN) 
-        raw = sine(voice->phase);
-    else if (voice->wave_type == TYPE_TRIANGLE) 
-        raw = triangle(voice->phase, 8);
-    else if (voice->wave_type == TYPE_SQUARE) 
-        raw = square(voice->phase, 8);
-    else if (voice->wave_type == TYPE_SAWTOOTH) 
-        raw = sawtooth(voice->phase, 8);
-    else if (voice->wave_type == TYPE_WHITE_NOISE) 
-        raw = white(voice->phase);
+    if (voice->wave_type == SIN) raw = sine(voice->phase);
+    else if (voice->wave_type == TRIANGLE_SUM) raw = triangle(voice->phase, 8);
+    else if (voice->wave_type == TRIANGLE_NAIVE) raw = triangle_naive(voice->phase);
+    else if (voice->wave_type == SQUARE_SUM) raw = square(voice->phase, 3);
+    else if (voice->wave_type == SQUARE_NAIVE) raw = square_naive(voice->phase);
+    else if (voice->wave_type == SQUARE_POLYBLEP) raw = square_polyblep(voice->phase);
+    else if (voice->wave_type == SAW_SUM) raw = sawtooth(voice->phase, 8);
+    else if (voice->wave_type == SAW_NAIVE) raw = saw_naive(voice->phase);
+    else if (voice->wave_type == SAW_POLYBLEP) raw = saw_polyblep(voice->phase);
+    else if (voice->wave_type == WHITE_NOISE) raw = white(voice->phase);
+    else if (voice->wave_type == BITCRUSH) raw = bitcrush(voice->sum_phase);
 
     // ok now lets try to be dumb about it
 

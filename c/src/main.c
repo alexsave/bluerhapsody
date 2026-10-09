@@ -17,6 +17,8 @@
 #include "format.h"
 #include "pq.h"
 
+static const u16 BPM = 60;
+
 int main(int argc, char* argv[]){
 
     if (argc > 2) {
@@ -49,10 +51,10 @@ int main(int argc, char* argv[]){
     // if you want to 10x the power, you need to sqrt(10)x the amplitude
     // 1 db increase is 10^1/10 increase in power, but sqrt(10)^1/10 increase in amplitude
     // or 10^1/20 increase in amplitude
-    
+
     // power is correlated to square of amplitude, thus if you want to 10x
     const f64 AMP_MULT = pow(10.0, 1.0/20.0);
-    printf("%lf\n", AMP_MULT);
+    //printf("%lf\n", AMP_MULT);
 
     f64 effective_amplitude = pow(AMP_MULT, gain);
 
@@ -81,7 +83,7 @@ int main(int argc, char* argv[]){
     // 100x, 1:24 loses me
     // my hearing is roughly 32Hz to 16.8kHz wow
 
-    u16 PIANO_KEYS = 88;
+    u16 PIANO_KEYS = 120;
 
     Voice* piano = calloc(PIANO_KEYS, sizeof(Voice));
     Voice* temp;
@@ -99,37 +101,16 @@ int main(int argc, char* argv[]){
             octave *= 2.0;
         }
 
-        temp = voice_init(SAMPLE_FREQUENCY, TYPE_SAWTOOTH, note, 50, 50, .5, 500);
+        temp = voice_init(SAMPLE_FREQUENCY, BITCRUSH, note/*lol*/, 50, 50, .5, 500);
         memcpy(piano + i, temp, sizeof(Voice));
         note *= SEMITONE_MULT;
     }
 
-
-
-    FILE * file = fopen(argv[2], "rb");
-    fseek(file, 0, SEEK_END);
-    u32 size = ftell(file);
-    rewind(file);
-    u8* buffer = (u8*)malloc(sizeof(u8) * (size + 1));
-    u32 result = fread(buffer, 1, size, file);
-
-    buffer[result] = 0;
-
-    char* stream = (char*)buffer;
-
-
-
-    // stream POSITION start
-    // the numerical prefix is assumed to be that of the previous unless stated otherwise
-    // same for length [S,T,I,Q,H,W] (I for eIghth)
-
-    // [position]: ([note char][optional #]?[optional octave number]?[optional duration]?)+
     PQ* events = pq_init();
     //
-    u64 beats = parse_stream(stream, events);
+    u64 beats = parse_stream(events, argv[2]);
 
     // in per minute lol
-    u16 BPM = 55;
 
     // bpm = beat / 60s
     // bpm / beat * 60 = s
@@ -147,8 +128,8 @@ int main(int argc, char* argv[]){
 
     f64* left = calloc(sizeof(f64), num_samples);
     f64* right = calloc(sizeof(f64), num_samples);
-    
-// now we can make files, now that we have seconds
+
+    // now we can make files, now that we have seconds
     void* wav = write_headers(sec);
 
     f64* run = left;
@@ -161,6 +142,17 @@ int main(int argc, char* argv[]){
 
 
     for (u32 i = 0; i < num_samples; i++) {
+
+        /*if (i == SAMPLE_FREQUENCY * 17) {
+            for (u16 i = 0; i < PIANO_KEYS; i++) 
+                voice_set_type(piano + i, SAW_POLYBLEP);
+        } else if (i == SAMPLE_FREQUENCY * 34) {
+            for (u16 i = 0; i < PIANO_KEYS; i++) 
+                voice_set_type(piano + i, SQUARE_NAIVE);
+        } else if (i == SAMPLE_FREQUENCY * 51) {
+            for (u16 i = 0; i < PIANO_KEYS; i++) 
+                voice_set_type(piano + i, SQUARE_POLYBLEP);
+        }*/
 
         u64 event = pq_peek(events);
         // so, empty
@@ -181,9 +173,8 @@ int main(int argc, char* argv[]){
             }
         }
 
-        for (u16 i = 0; i < PIANO_KEYS; i++) {
+        for (u16 i = 0; i < PIANO_KEYS; i++) 
             voice_step(piano + i, run, rrun);
-        }
 
         run++;
         rrun++;

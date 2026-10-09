@@ -8,7 +8,19 @@
 #include "note.h"
 
 // returns how many beats in this thing
-u64 parse_stream(char* stream, PQ* events) {
+u64 parse_stream(PQ* events, char* filename) {
+
+
+    FILE * file = fopen(filename, "rb");
+    fseek(file, 0, SEEK_END);
+    u32 size = ftell(file);
+    rewind(file);
+    u8* buffer = (u8*)malloc(sizeof(u8) * (size + 1));
+    u32 result = fread(buffer, 1, size, file);
+
+    buffer[result] = 0;
+
+    char* stream = (char*)buffer;
 
     u8 in_paren = 0;
 
@@ -16,6 +28,12 @@ u64 parse_stream(char* stream, PQ* events) {
 
     u8 octave_n = 0;
 
+
+    // stream POSITION start
+    // the numerical prefix is assumed to be that of the previous unless stated otherwise
+    // same for length [S,T,I,Q,H,W] (I for eIghth)
+
+    // [position]: ([note char][optional #]?[optional octave number]?[optional duration]?)+
 
     // in the format this is in quarter notes, not 48ths
 
@@ -210,7 +228,7 @@ u64 parse_stream(char* stream, PQ* events) {
     }
 
     if(note_mod != MAX_U8){
-        u16 index = note_mod + octave_n* 12;
+        u16 index = note_mod + octave_n * 12;
         if(dur != 0){
             if(!in_paren){
                 u64 s = ((u64)current_beat << 48) | PRESS_BIT | index;
@@ -233,6 +251,8 @@ u64 parse_stream(char* stream, PQ* events) {
             }
         }
     }
+
+    free(buffer);
 
     return current_beat;
 }

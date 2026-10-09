@@ -7,7 +7,7 @@
 
 static const u64 PRESS_BIT = 1 << 16;
 
-u64 parse_stream(char* stream, PQ* events);
+u64 parse_stream(PQ* events, char* filename);
 
 #endif
 

@@ -17,11 +17,13 @@ typedef struct LRSample {
 
 typedef struct Voice {
     f64 phase; // like where we are in the "circle", this is the angle
+    f64 sum_phase;// total, used for cool bitcrush effect
     u8 envelope_stage;
     f64 time_into_stage_ms;
 
 
     // constants
+
     f64 sample_rate;
 
     f64 voice_frequency; // constant?
@@ -53,6 +55,8 @@ typedef struct Voice {
 
 // the usual suspects
 Voice* voice_init(u32 sample_rate, u8 wave_type, f64 frequency, f64 attack_ms, f64 decay_ms, f64 sustain_ratio, f64 release_ms);
+
+void voice_set_type(Voice* voice, u8 wave_type);
 
 // intialize attack
 void voice_press(Voice* voice);

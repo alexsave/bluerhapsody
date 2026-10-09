@@ -29,11 +29,11 @@ f64 sf_next() {
     return next;
 }
 
-f64 sawtooth(f64 phase, u16 levels) {
-    if (1) {
-        return (fmod(phase/ (2.0*M_PI), 1.0) - 0.5) * 2.0;
-    }
+f64 saw_naive(f64 phase) {
+    return (fmod(phase/ (2.0*M_PI), 1.0) - 0.5) * 2.0;
+}
 
+f64 sawtooth(f64 phase, u16 levels) {
     // this gets that first sin(x)
     f64 sum = sf_init(phase);
 
@@ -44,14 +44,18 @@ f64 sawtooth(f64 phase, u16 levels) {
     return sum * -2.0 / M_PI;
 }
 
-f64 square(f64 phase, u16 levels) {
-    if (1) {
-        f64 i = (fmod(phase/ (2.0*M_PI), 1.0) - 0.5) * 2.0;
-        if (i <= 0.0)
-            return -1.0;
-        return 1.0;
-    }
+f64 saw_polyblep(f64 phase) {
+    return 0.0;
+}
 
+f64 square_naive(f64 phase) {
+    f64 i = (fmod(phase/ (2.0*M_PI), 1.0) - 0.5) * 2.0;
+    if (i <= 0.0)
+        return -1.0;
+    return 1.0;
+}
+
+f64 square(f64 phase, u16 levels) {
     f64 sum = sf_init(phase);
     for (u16 n = 3; n <= levels; n+=2) {
         sf_next(); // "2"
@@ -60,13 +64,18 @@ f64 square(f64 phase, u16 levels) {
     return sum * 4.0 / M_PI;
 }
 
+f64 square_polyblep(f64 phase) {
+    return 0.0;
+}
+
+f64 triangle_naive(f64 phase) {
+    f64 i = (fmod(phase/ (2.0*M_PI), 1.0) - 0.5) * 2.0;
+    if (i <= 0.0)
+        return (i+.5)*2.0;
+    return (i-.5)*-2.0;
+}
+
 f64 triangle(f64 phase, u16 levels) {
-    if (1) {
-        f64 i = (fmod(phase/ (2.0*M_PI), 1.0) - 0.5) * 2.0;
-        if (i <= 0.0)
-            return (i+.5)*2.0;
-        return (i-.5)*-2.0;
-    }
     f64 sum = sf_init(phase);
     for (u16 n = 3; n <= levels; n+=2) {
         sf_next();
@@ -85,10 +94,19 @@ f64 sine(f64 phase) {
 }
 
 f64 white(f64 phase) {
-    // this is super fucking cool btw
-    //u64 p = phase;
 
     u64 p = *(u64*)(&phase);
+    rand_next(&p);
+
+    p &= MAX_U32;
+
+    return (((f64)(2*p) / (f64)MAX_U32) - 1.0);
+}
+
+f64 bitcrush(f64 phase) {
+    // this is super fucking cool btw, at least when phase was /
+    u64 p = phase;
+
     rand_next(&p);
 
     p &= MAX_U32;

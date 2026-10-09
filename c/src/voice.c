@@ -45,7 +45,7 @@ void voice_set_type(Voice* voice, u8 wave_type) {
 }
 
 // like current amplitude irregardless of freq, only ADSR
-f64 current_ampl(Voice* voice){
+f64 current_ampl(Voice* voice) {
     if (voice->envelope_stage == STAGE_OFF) 
         return 0.0;
     if (voice->envelope_stage == STAGE_ATTACK) 
@@ -57,7 +57,7 @@ f64 current_ampl(Voice* voice){
 
     if (voice->envelope_stage == STAGE_RELEASE) 
         return (voice->sustain_ratio - (voice->sustain_ratio * voice->time_into_stage_ms / voice->release_ms));
-
+    return 0.0;
 }
 
 // intialize attack
@@ -151,7 +151,7 @@ void voice_step(Voice* voice, f64* left, f64* right) {
 
     pan_update(voice);
 
-    f64 raw;
+    f64 raw = 0.0;
     if (voice->wave_type == SIN) raw = sine(voice->phase);
     else if (voice->wave_type == TRIANGLE_SUM) raw = triangle(voice->phase, 8);
     else if (voice->wave_type == TRIANGLE_NAIVE) raw = triangle_naive(voice->phase);

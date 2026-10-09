@@ -42,15 +42,14 @@ int main(int argc, char* argv[]){
         }
     }
 
+    if (argc <= 2)
+        return 0;
+
 
     sf_reserve();
 
     f32 gain = -12.0;
 
-    // an increase of 10 DB means the POWER 10x
-    // if you want to 10x the power, you need to sqrt(10)x the amplitude
-    // 1 db increase is 10^1/10 increase in power, but sqrt(10)^1/10 increase in amplitude
-    // or 10^1/20 increase in amplitude
 
     // power is correlated to square of amplitude, thus if you want to 10x
     const f64 AMP_MULT = pow(10.0, 1.0/20.0);
@@ -67,19 +66,9 @@ int main(int argc, char* argv[]){
 
     // now we can do fun stuff with sampled data
 
-
-
     const f64 SEMITONE_MULT = pow(2.0, 1.0/12.0);
 
-
-
-
-    // just do A4 for now
-
-
-
     // 16 s in I hear something - roughly 32Hz
-
     // 100x, 1:24 loses me
     // my hearing is roughly 32Hz to 16.8kHz wow
 
@@ -101,7 +90,7 @@ int main(int argc, char* argv[]){
             octave *= 2.0;
         }
 
-        temp = voice_init(SAMPLE_RATE, SAW_NAIVE, note/*lol*/, 50, 50, .5, 500);
+        temp = voice_init(SAMPLE_RATE, SAW_POLYBLEP, note, 50, 50, .5, 100);
         memcpy(piano + i, temp, sizeof(Voice));
         note *= SEMITONE_MULT;
     }
@@ -120,10 +109,6 @@ int main(int argc, char* argv[]){
     // headroom, let releases play
     sec += 2;
 
-
-    // 
-    //sec = 15;
-
     u32 num_samples = sec * SAMPLE_RATE;
 
     f64* left = calloc(sizeof(f64), num_samples);
@@ -140,19 +125,7 @@ int main(int argc, char* argv[]){
 
     f64 fortyeighths = (f64)(BPM * 4 * 3) / (f64)(SAMPLE_RATE * 60);
 
-
     for (u32 i = 0; i < num_samples; i++) {
-
-        if (i == SAMPLE_RATE * 17) {
-            for (u16 i = 0; i < PIANO_KEYS; i++) 
-                voice_set_type(piano + i, SAW_POLYBLEP);
-        } else if (i == SAMPLE_RATE * 35) {
-            for (u16 i = 0; i < PIANO_KEYS; i++) 
-                voice_set_type(piano + i, SQUARE_NAIVE);
-        } else if (i == SAMPLE_RATE * 53) {
-            for (u16 i = 0; i < PIANO_KEYS; i++) 
-                voice_set_type(piano + i, SQUARE_POLYBLEP);
-        }
 
         u64 event = pq_peek(events);
         // so, empty
@@ -179,8 +152,6 @@ int main(int argc, char* argv[]){
         run++;
         rrun++;
     }
-
-
 
     // idk, but lets scale it such that the highest peak is at this amplitude
 
@@ -224,7 +195,6 @@ int main(int argc, char* argv[]){
         l++;
         r++;
     }
-
 
     write_wav(left, right, wav, "m05_osc_compare.wav", sec);
 

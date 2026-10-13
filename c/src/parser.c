@@ -62,7 +62,7 @@ u64 parse_stream(PQ* events, char* filename) {
 
     while(*ptr != 0) {
         char c = *ptr;
-        if (c == '(' || c == ')' || c == ' ' || c == '|') {
+        if (c == '(' || c == ')' || c == ' ' || c == '|' || c == '\n') {
             //printf("last note ended but %d %d\n", note_mod, dur);
             // last note definitely just ended
             if (rest) {
@@ -112,7 +112,7 @@ u64 parse_stream(PQ* events, char* filename) {
         
             current_beat = start_position * QTR;
 
-        } else if (c == ' '){
+        } else if (c == ' ' || c == '\n'){
             parser_state = SPACE;
             if(note_mod != MAX_U8)
                 first_of_group = 0;

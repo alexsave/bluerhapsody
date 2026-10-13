@@ -53,7 +53,6 @@ void _biquad(QuadVals * quad_vals, f64* x, u64 sample_count, f64 a0, f64 a1, f64
 }
 
 void lpf(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q) {
-
     f64 w0 = TWO_PI * freq0 / SAMPLE_RATE;
     
     f64 sinw0 = sin(w0);
@@ -68,9 +67,64 @@ void lpf(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q)
     f64 a0 = 1.0 + alpha;
     f64 a2 = 1.0 - alpha;
    
-    printf("%f, %f, %f, %f, %f, %f\n", a0, a1, a2, b0, b1, b2);
+    //printf("%f, %f, %f, %f, %f, %f\n", a0, a1, a2, b0, b1, b2);
 
+    _biquad(quad_vals, channel, sample_count, a0, a1, a2, b0, b1, b2);
+}
 
+void hpf(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q) {
+    f64 w0 = TWO_PI * freq0 / SAMPLE_RATE;
+    
+    f64 sinw0 = sin(w0);
+    f64 cosw0 = cos(w0);
+
+    f64 b1 = -1.0*(1.0 + cosw0);
+    f64 b0 = b1 / -2.0;
+    f64 b2 = b1 / -2.0;
+    f64 a1 = -2.0 * cosw0;
+
+    f64 alpha = sinw0/(2.0*q);
+    f64 a0 = 1.0 + alpha;
+    f64 a2 = 1.0 - alpha;
+   
+    _biquad(quad_vals, channel, sample_count, a0, a1, a2, b0, b1, b2);
+}
+
+// constant skirt gain
+void bpf(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q) {
+    f64 w0 = TWO_PI * freq0 / SAMPLE_RATE;
+    
+    f64 sinw0 = sin(w0);
+    f64 cosw0 = cos(w0);
+
+    f64 b1 = 0;
+    f64 b0 = sinw0 / 2.0;
+    f64 b2 = -b0;
+    f64 a1 = -2.0 * cosw0;
+
+    f64 alpha = sinw0/(2.0*q);
+    f64 a0 = 1.0 + alpha;
+    f64 a2 = 1.0 - alpha;
+   
+    _biquad(quad_vals, channel, sample_count, a0, a1, a2, b0, b1, b2);
+}
+
+// 0db peak gain
+void bpf0(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q) {
+    f64 w0 = TWO_PI * freq0 / SAMPLE_RATE;
+    
+    f64 sinw0 = sin(w0);
+    f64 cosw0 = cos(w0);
+
+    f64 alpha = sinw0/(2.0*q);
+    f64 b1 = 0;
+    f64 b0 = alpha;
+    f64 b2 = -b0;
+    f64 a1 = -2.0 * cosw0;
+
+    f64 a0 = 1.0 + alpha;
+    f64 a2 = 1.0 - alpha;
+   
     _biquad(quad_vals, channel, sample_count, a0, a1, a2, b0, b1, b2);
 }
 

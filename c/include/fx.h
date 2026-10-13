@@ -11,6 +11,9 @@ typedef struct QuadVals {
 } QuadVals;
 
 void lpf(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q);
+void hpf(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q);
+void bpf(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q);
+void bpf0(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q);
 void naive_lowpass(f64* channel, u64 sample_count, f64 fraction);
 
 #endif

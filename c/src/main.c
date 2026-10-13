@@ -178,8 +178,8 @@ int main(int argc, char* argv[]){
         //printf("%d\n", l - left);
         f64 frac = (f64)i / (f64)increments;
         // does lowpass affect l address? idk
-        lpf(qv, l, sweep_samples, f0 * (1.0 + 8.0*frac), Q);
-        lpf(qv, r, sweep_samples, f0 * (1.0 + 8.0*frac), Q);
+        bpf(qv, l, sweep_samples, f0 * (1.0 + 8.0*frac), Q);
+        bpf(qv, r, sweep_samples, f0 * (1.0 + 8.0*frac), Q);
         l += sweep_samples;
         r += sweep_samples;
     }
@@ -188,8 +188,8 @@ int main(int argc, char* argv[]){
         //printf("%d\n", l - left);
         f64 frac = (f64)i / (f64)increments;
         // does lowpass affect l address? idk
-        lpf(qv, l, sweep_samples, f0 * (9.0 - 8.0*frac), Q);
-        lpf(qv, r, sweep_samples, f0 * (9.0 - 8.0*frac), Q);
+        bpf(qv, l, sweep_samples, f0 * (9.0 - 8.0*frac), Q);
+        bpf(qv, r, sweep_samples, f0 * (9.0 - 8.0*frac), Q);
         l += sweep_samples;
         r += sweep_samples;
     }

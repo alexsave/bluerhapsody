@@ -18,7 +18,7 @@
 #include "format.h"
 #include "pq.h"
 
-static const u16 BPM = 60;
+static const u16 BPM = 30;
 
 int main(int argc, char* argv[]){
 
@@ -155,36 +155,43 @@ int main(int argc, char* argv[]){
     }
 
     // "manual" sweep
-    u32 sweep_samples = 50000;
+    u32 sweep_samples = 3000;
     u32 increments = 100;
     l = left;
     r = right;
 
-    for (u32 i = 1; i < increments; i++) {
+    /*for (u32 i = 1; i < increments; i++) {
         f64 frac = (f64)i / (f64)increments;
         // does lowpass affect l address? idk
         lowpass(l, sweep_samples, frac);
         lowpass(r, sweep_samples, frac);
         l += sweep_samples;
         r += sweep_samples;
+    }*/
+
+    f64 Q = 1.0;
+    f64 f0 = 55.0;
+
+    QuadVals * qv = calloc(1, sizeof(QuadVals));
+
+    for (u32 i = 1; i < increments; i++) {
+        //printf("%d\n", l - left);
+        f64 frac = (f64)i / (f64)increments;
+        // does lowpass affect l address? idk
+        lpf(qv, l, sweep_samples, f0 * (1.0 + 8.0*frac), Q);
+        lpf(qv, r, sweep_samples, f0 * (1.0 + 8.0*frac), Q);
+        l += sweep_samples;
+        r += sweep_samples;
     }
 
     for (u32 i = 1; i < increments; i++) {
+        //printf("%d\n", l - left);
         f64 frac = (f64)i / (f64)increments;
         // does lowpass affect l address? idk
-        lowpass(l, 1000, 1.0-frac);
-        lowpass(r, 1000, 1.0-frac);
-        l += 1000;
-        r += 1000;
-    }
-
-    for (u32 i = 1; i < increments; i++) {
-        f64 frac = (f64)i / (f64)increments;
-        // does lowpass affect l address? idk
-        lowpass(l, 1000, frac);
-        lowpass(r, 1000, frac);
-        l += 1000;
-        r += 1000;
+        lpf(qv, l, sweep_samples, f0 * (9.0 - 8.0*frac), Q);
+        lpf(qv, r, sweep_samples, f0 * (9.0 - 8.0*frac), Q);
+        l += sweep_samples;
+        r += sweep_samples;
     }
 
 

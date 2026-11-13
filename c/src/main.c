@@ -171,34 +171,35 @@ int main(int argc, char* argv[]){
     }*/
 
     f64 Q = 1.0;
-    f64 f0 = 660.0;
+    f64 f0 = 880.0;
 
     QuadVals * qv_r = calloc(1, sizeof(QuadVals));
     QuadVals * qv_l = calloc(1, sizeof(QuadVals));
 
-    f64 low_f = 110.0;
-    f64 hi_f = 20000.0;
+    f64 low_f = 0.1;
+    f64 hi_f = 2.0;
     f64 diff = hi_f - low_f;
 
     f64 A = pow(10.0, 12.0/ 40.0);
 
-    //descent
+    //ascent
     for (u32 i = 1; i < increments; i++) {
         f64 frac = (f64)i / (f64)increments;
-        high_shelf(qv_l, l, sweep_samples, hi_f - diff*frac, Q, A);
-        high_shelf(qv_r, r, sweep_samples, hi_f - diff*frac, Q, A);
+        hpf(qv_l, l, sweep_samples, f0, low_f + diff * frac);
+        hpf(qv_r, r, sweep_samples, f0, low_f + diff * frac);
         l += sweep_samples;
         r += sweep_samples;
     }
 
-    //ascent
+    //descent
     for (u32 i = 1; i < increments; i++) {
         f64 frac = (f64)i / (f64)increments;
-        high_shelf(qv_l, l, sweep_samples, low_f + diff * frac, Q, A);
-        high_shelf(qv_r, r, sweep_samples, low_f + diff * frac, Q, A);
+        hpf(qv_l, l, sweep_samples, f0, hi_f - diff*frac);
+        hpf(qv_r, r, sweep_samples, f0, hi_f - diff*frac);
         l += sweep_samples;
         r += sweep_samples;
     }
+
 
 
 

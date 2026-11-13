@@ -91,7 +91,8 @@ int main(int argc, char* argv[]){
             octave *= 2.0;
         }
 
-        temp = voice_init(SAMPLE_RATE, SAW_POLYBLEP, note, 50, 50, .5, 100);
+        //temp = voice_init(SAMPLE_RATE, SAW_POLYBLEP, note, 50, 50, .5, 100);
+        temp = voice_init(SAMPLE_RATE, WHITE_NOISE, note, 50, 50, .5, 100);
         memcpy(piano + i, temp, sizeof(Voice));
         note *= SEMITONE_MULT;
     }
@@ -170,29 +171,35 @@ int main(int argc, char* argv[]){
     }*/
 
     f64 Q = 1.0;
-    f64 f0 = 55.0;
+    f64 f0 = 660.0;
 
-    QuadVals * qv = calloc(1, sizeof(QuadVals));
+    QuadVals * qv_r = calloc(1, sizeof(QuadVals));
+    QuadVals * qv_l = calloc(1, sizeof(QuadVals));
 
+    f64 low_f = 110.0;
+    f64 hi_f = 20000.0;
+    f64 diff = hi_f - low_f;
+
+    f64 A = pow(10.0, 12.0/ 40.0);
+
+    //descent
     for (u32 i = 1; i < increments; i++) {
-        //printf("%d\n", l - left);
         f64 frac = (f64)i / (f64)increments;
-        // does lowpass affect l address? idk
-        bpf(qv, l, sweep_samples, f0 * (1.0 + 8.0*frac), Q);
-        bpf(qv, r, sweep_samples, f0 * (1.0 + 8.0*frac), Q);
+        high_shelf(qv_l, l, sweep_samples, hi_f - diff*frac, Q, A);
+        high_shelf(qv_r, r, sweep_samples, hi_f - diff*frac, Q, A);
         l += sweep_samples;
         r += sweep_samples;
     }
 
+    //ascent
     for (u32 i = 1; i < increments; i++) {
-        //printf("%d\n", l - left);
         f64 frac = (f64)i / (f64)increments;
-        // does lowpass affect l address? idk
-        bpf(qv, l, sweep_samples, f0 * (9.0 - 8.0*frac), Q);
-        bpf(qv, r, sweep_samples, f0 * (9.0 - 8.0*frac), Q);
+        high_shelf(qv_l, l, sweep_samples, low_f + diff * frac, Q, A);
+        high_shelf(qv_r, r, sweep_samples, low_f + diff * frac, Q, A);
         l += sweep_samples;
         r += sweep_samples;
     }
+
 
 
     //lowpass(left, num_samples, .10);

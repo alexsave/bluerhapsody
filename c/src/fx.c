@@ -39,14 +39,15 @@ void _biquad(QuadVals * quad_vals, f64* x, u64 sample_count, f64 a0, f64 a1, f64
 
     //memcpy(x, y, sample_count * sizeof(f64));
 
-    for (u64 i = 0; i < sample_count;i++) {
-        x[i] = y[i];
-    }
     
     quad_vals->x_minus_2 = x[sample_count-2];
     quad_vals->x_minus_1 = x[sample_count-1];
     quad_vals->y_minus_2 = y[sample_count-2];
     quad_vals->y_minus_1 = y[sample_count-1];
+
+    for (u64 i = 0; i < sample_count;i++) {
+        x[i] = y[i];
+    }
 
     free(y);
     //*channel = y;
@@ -127,6 +128,89 @@ void bpf0(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q
    
     _biquad(quad_vals, channel, sample_count, a0, a1, a2, b0, b1, b2);
 }
+
+void notch(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q) {
+    f64 sinw0 = sin(w0);
+    f64 cosw0 = cos(w0);
+    f64 alpha = sinw0/(2.0*q);
+
+    f64 b0 = 1.0;
+    f64 b2 = 1.0;
+    f64 a0 = 1.0 + alpha;
+    f64 a1 = -2.0 * cosw0;
+    f64 b1 = a1;
+    f64 a2 = 1.0 - alpha;
+
+    _biquad(quad_vals, channel, sample_count, a0, a1, a2, b0, b1, b2);
+}
+
+void apf(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q) {
+    f64 sinw0 = sin(w0);
+    f64 cosw0 = cos(w0);
+    f64 alpha = sinw0/(2.0*q);
+
+    f64 a0 = 1.0 + alpha;
+    f64 b2 = a0;
+    f64 a1 = -2.0 * cosw0;
+    f64 b1 = a1;
+    f64 a2 = 1.0 - alpha;
+    f64 b0 = a2;
+
+    _biquad(quad_vals, channel, sample_count, a0, a1, a2, b0, b1, b2);
+}
+
+void peaking_eq(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q, f64 A) {
+    f64 sinw0 = sin(w0);
+    f64 cosw0 = cos(w0);
+    f64 alpha = sinw0/(2.0*q);
+
+    f64 b0 = 1.0 + alpha * A;
+    f64 b1 = -2.0 * cosw0;
+    f64 b1 = 1.0 - alpha * A;
+
+    f64 a0 = 1.0 + alpha / A;
+    f64 a1 = b1;
+    f64 a2 = 1.0 - alpha / A;
+
+    _biquad(quad_vals, channel, sample_count, a0, a1, a2, b0, b1, b2);
+}
+
+void low_shelf(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q, f64 A) {
+    f64 sinw0 = sin(w0);
+    f64 cosw0 = cos(w0);
+    f64 alpha = sinw0/(2.0*q);
+
+    f64 sqrtA = sqrt(A);
+
+    f64 b0 = A * (A + 1.0 - (A - 1.0)*cosw0 + 2.0 * sqrtA * alpha);
+    f64 b1 = 2.0 * A * (A - 1.0 - (A + 1.0) * cosw0);
+    f64 b2 = A * (A + 1.0 - (A - 1.0)*cosw0 - 2.0 * sqrtA * alpha);
+
+    f64 a0 = A + 1.0 + (A - 1.0) * cosw0 + 2.0 * sqrtA * alpha;
+    f64 a1 = -2.0 * (A - 1.0 + (A + 1.0) * cosw0);
+    f64 a2 = A + 1.0 + (A - 1.0) * cosw0 - 2.0 * sqrtA * alpha;
+
+    _biquad(quad_vals, channel, sample_count, a0, a1, a2, b0, b1, b2);
+}
+
+void high_shelf(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q, f64 A) {
+    f64 sinw0 = sin(w0);
+    f64 cosw0 = cos(w0);
+    f64 alpha = sinw0/(2.0*q);
+
+    f64 sqrtA = sqrt(A);
+
+    f64 b0 = A * (A + 1.0 + (A - 1.0)*cosw0 + 2.0 * sqrtA * alpha);
+    f64 b1 = -2.0 * A * (A - 1.0 + (A + 1.0) * cosw0);
+    f64 b2 = A * (A + 1.0 + (A - 1.0)*cosw0 - 2.0 * sqrtA * alpha);
+
+    f64 a0 = A + 1.0 - (A - 1.0) * cosw0 + 2.0 * sqrtA * alpha;
+    f64 a1 = 2.0 * (A - 1.0 - (A + 1.0) * cosw0);
+    f64 a2 = A + 1.0 - (A - 1.0) * cosw0 - 2.0 * sqrtA * alpha;
+
+    _biquad(quad_vals, channel, sample_count, a0, a1, a2, b0, b1, b2);
+}
+
 
 // seems simple enough
 void naive_lowpass(f64* channel, u64 sample_count, f64 fraction) {

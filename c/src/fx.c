@@ -130,6 +130,7 @@ void bpf0(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q
 }
 
 void notch(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q) {
+    f64 w0 = TWO_PI * freq0 / SAMPLE_RATE;
     f64 sinw0 = sin(w0);
     f64 cosw0 = cos(w0);
     f64 alpha = sinw0/(2.0*q);
@@ -145,6 +146,7 @@ void notch(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 
 }
 
 void apf(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q) {
+    f64 w0 = TWO_PI * freq0 / SAMPLE_RATE;
     f64 sinw0 = sin(w0);
     f64 cosw0 = cos(w0);
     f64 alpha = sinw0/(2.0*q);
@@ -160,13 +162,14 @@ void apf(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q)
 }
 
 void peaking_eq(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q, f64 A) {
+    f64 w0 = TWO_PI * freq0 / SAMPLE_RATE;
     f64 sinw0 = sin(w0);
     f64 cosw0 = cos(w0);
     f64 alpha = sinw0/(2.0*q);
 
     f64 b0 = 1.0 + alpha * A;
     f64 b1 = -2.0 * cosw0;
-    f64 b1 = 1.0 - alpha * A;
+    f64 b2 = 1.0 - alpha * A;
 
     f64 a0 = 1.0 + alpha / A;
     f64 a1 = b1;
@@ -176,6 +179,7 @@ void peaking_eq(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0,
 }
 
 void low_shelf(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q, f64 A) {
+    f64 w0 = TWO_PI * freq0 / SAMPLE_RATE;
     f64 sinw0 = sin(w0);
     f64 cosw0 = cos(w0);
     f64 alpha = sinw0/(2.0*q);
@@ -194,6 +198,7 @@ void low_shelf(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, 
 }
 
 void high_shelf(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q, f64 A) {
+    f64 w0 = TWO_PI * freq0 / SAMPLE_RATE;
     f64 sinw0 = sin(w0);
     f64 cosw0 = cos(w0);
     f64 alpha = sinw0/(2.0*q);

@@ -14,6 +14,7 @@ Voice* voice_init(u32 sample_rate, u8 wave_type, f64 frequency, f64 attack_ms, f
     voice->sum_phase = 0.0;
     voice->envelope_stage = STAGE_OFF;
     voice->time_into_stage_ms = 0.0;
+    voice->time_since_opened_ms = 0.0;
 
     voice->sample_rate = sample_rate;
 
@@ -36,6 +37,8 @@ Voice* voice_init(u32 sample_rate, u8 wave_type, f64 frequency, f64 attack_ms, f
     voice->time_into_pan_ms = 0.0;
 
     voice->phase_bump = 2.0 * M_PI * voice->voice_frequency / voice->sample_rate;
+
+    voice->qv = calloc(1, sizeof(QuadVals));
 
     return voice;
 }
@@ -121,6 +124,7 @@ void voice_step(Voice* voice, f64* left, f64* right) {
         voice->phase -= TWO_PI;
 
     voice->time_into_stage_ms += 1000.0 / voice->sample_rate;
+    voice->time_since_opened_ms += 1000.0 / voice->sample_rate;
     f64 end_of_stage_ms = 1000*60*60*24;
     u8 next_stage = voice->envelope_stage;
 
@@ -138,11 +142,24 @@ void voice_step(Voice* voice, f64* left, f64* right) {
         next_stage = STAGE_OFF;
     }
 
+    QuadVals* qv = voice->qv;
+
     if (voice->time_into_stage_ms >= end_of_stage_ms) {
         //swap the stage
         voice->envelope_stage = next_stage;
         voice->time_into_stage_ms = 0.0;
+
+        if (next_stage == STAGE_OFF) {
+            voice->time_since_opened_ms = 0.0;
+            // reset quad vals
+            qv->x_minus_2 = 0.0;
+            qv->x_minus_1 = 0.0;
+            qv->y_minus_2 = 0.0;
+            qv->y_minus_1 = 0.0;
+        }
     }
+
+    // apply lpf right here as a cheat?
 
     // ok now emit
     // for now just do sin wave
@@ -168,6 +185,13 @@ void voice_step(Voice* voice, f64* left, f64* right) {
 
     f64 unpanned = raw * current_ampl(voice);
 
+    // not sure when to apply fx. so maybe after amplitude thing? could be before
+    f64 filter_val = 1.0 - (voice->time_since_opened_ms / 500.0);
+    if (filter_val < 0.0)
+        filter_val = 0.0;
+
+    f64 effected = unpanned;//lpf_one(voice->qv, unpanned, 2000.0 * filter_val, 10.0);
+
     // linear -> -1.0 means left * 1, right * 0
     // linear -> 1.0 means left * 0, right * 1
 
@@ -177,8 +201,8 @@ void voice_step(Voice* voice, f64* left, f64* right) {
 
     // maybe it would be easier to do 0 to 1?
     // nah -1 and 1 makes more sense
-    *left += unpanned * cos(angle);
-    *right += unpanned * sin(angle);
+    *left += effected * cos(angle);
+    *right += effected * sin(angle);
 }
 
 void voice_pan(Voice* voice, f64 to, f64 pan_ms) {
@@ -189,6 +213,7 @@ void voice_pan(Voice* voice, f64 to, f64 pan_ms) {
 }
 
 void voice_free(Voice* voice) {
+    free(voice->qv);
     free(voice);
 }
 

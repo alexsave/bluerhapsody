@@ -18,7 +18,7 @@
 #include "format.h"
 #include "pq.h"
 
-static const u16 BPM = 30;
+static const u16 BPM = 60;
 
 int main(int argc, char* argv[]){
 
@@ -91,8 +91,8 @@ int main(int argc, char* argv[]){
             octave *= 2.0;
         }
 
-        //temp = voice_init(SAMPLE_RATE, SAW_POLYBLEP, note, 50, 50, .5, 100);
-        temp = voice_init(SAMPLE_RATE, WHITE_NOISE, note, 50, 50, .5, 100);
+        temp = voice_init(SAMPLE_RATE, SAW_POLYBLEP, note, 50, 50, .5, 100);
+        //temp = voice_init(SAMPLE_RATE, WHITE_NOISE, note, 50, 50, .5, 100);
         memcpy(piano + i, temp, sizeof(Voice));
         note *= SEMITONE_MULT;
     }
@@ -127,6 +127,11 @@ int main(int argc, char* argv[]){
 
     f64 fortyeighths = (f64)(BPM * 4 * 3) / (f64)(SAMPLE_RATE * 60);
 
+    f64 Q = 8.0;
+
+    QuadVals * qv_r = calloc(1, sizeof(QuadVals));
+    QuadVals * qv_l = calloc(1, sizeof(QuadVals));
+
     for (u32 i = 0; i < num_samples; i++) {
 
         u64 event = pq_peek(events);
@@ -142,14 +147,17 @@ int main(int argc, char* argv[]){
                 pq_pop(events);
                 if (PRESS_BIT & event) {
                     voice_press(piano + event_index);
+
                 } else {
                     voice_release(piano + event_index);
                 }
             }
         }
 
-        for (u16 i = 0; i < PIANO_KEYS; i++) 
+        for (u16 i = 0; i < PIANO_KEYS; i++) {
             voice_step(piano + i, run, rrun);
+            
+        }
 
         run++;
         rrun++;
@@ -161,50 +169,13 @@ int main(int argc, char* argv[]){
     l = left;
     r = right;
 
-    /*for (u32 i = 1; i < increments; i++) {
-        f64 frac = (f64)i / (f64)increments;
-        // does lowpass affect l address? idk
-        lowpass(l, sweep_samples, frac);
-        lowpass(r, sweep_samples, frac);
-        l += sweep_samples;
-        r += sweep_samples;
-    }*/
 
-    f64 Q = 1.0;
-    f64 f0 = 880.0;
+    // "master" sweep of Q and cutoff that goes like few seconds up + few seconds down
+    // but on top of that
+    // within each note, the lpf cutoff MOVES
 
-    QuadVals * qv_r = calloc(1, sizeof(QuadVals));
-    QuadVals * qv_l = calloc(1, sizeof(QuadVals));
+    // master cutoff value -> per note cutoff value -> lpf
 
-    f64 low_f = 0.1;
-    f64 hi_f = 2.0;
-    f64 diff = hi_f - low_f;
-
-    f64 A = pow(10.0, 12.0/ 40.0);
-
-    //ascent
-    for (u32 i = 1; i < increments; i++) {
-        f64 frac = (f64)i / (f64)increments;
-        hpf(qv_l, l, sweep_samples, f0, low_f + diff * frac);
-        hpf(qv_r, r, sweep_samples, f0, low_f + diff * frac);
-        l += sweep_samples;
-        r += sweep_samples;
-    }
-
-    //descent
-    for (u32 i = 1; i < increments; i++) {
-        f64 frac = (f64)i / (f64)increments;
-        hpf(qv_l, l, sweep_samples, f0, hi_f - diff*frac);
-        hpf(qv_r, r, sweep_samples, f0, hi_f - diff*frac);
-        l += sweep_samples;
-        r += sweep_samples;
-    }
-
-
-
-
-    //lowpass(left, num_samples, .10);
-    //lowpass(right, num_samples, .10);
 
 
     // idk, but lets scale it such that the highest peak is at this amplitude

@@ -7,6 +7,44 @@
 #include "types.h"
 #include "constants.h"
 
+f64 _biquad_one(QuadVals * quad_val, f64 x, f64 a0, f64 a1, f64 a2, f64 b0, f64 b1, f64 b2) {
+    a1 /= a0;
+    a2 /= a0;
+    b0 /= a0;
+    b1 /= a0;
+    b2 /= a0;
+
+    f64 y = b0*x + b1*quad_val->x_minus_1 + b2*quad_val->x_minus_2 - a1*quad_val->y_minus_1 - a2*quad_val->y_minus_2;
+
+    quad_val->y_minus_2 = quad_val->y_minus_1;
+    quad_val->y_minus_1 = y;
+    quad_val->x_minus_2 = quad_val->x_minus_1;
+    quad_val->x_minus_1 = x;
+
+    return y;
+}
+
+f64 lpf_one(QuadVals * quad_val, f64 x, f64 freq0, f64 q) {
+    f64 w0 = TWO_PI * freq0 / SAMPLE_RATE;
+    
+    f64 sinw0 = sin(w0);
+    f64 cosw0 = cos(w0);
+
+    f64 b1 = 1.0 - cosw0;
+    f64 b0 = b1 / 2.0;
+    f64 b2 = b1 / 2.0;
+    f64 a1 = -2.0 * cosw0;
+
+    f64 alpha = sinw0/(2.0*q);
+    f64 a0 = 1.0 + alpha;
+    f64 a2 = 1.0 - alpha;
+   
+    //printf("%f, %f, %f, %f, %f, %f\n", a0, a1, a2, b0, b1, b2);
+
+    return _biquad_one(quad_val, x, a0, a1, a2, b0, b1, b2);
+}
+
+
 // this will take the address of the channel and set it to a new array
 void _biquad(QuadVals * quad_vals, f64* x, u64 sample_count, f64 a0, f64 a1, f64 a2, f64 b0, f64 b1, f64 b2) {
 

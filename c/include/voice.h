@@ -1,6 +1,7 @@
 #ifndef VOICE_H
 #define VOICE_H
 
+#include "fx.h"
 
 // this is like a single piano press key in a single row in Ableton. I think
 
@@ -46,6 +47,10 @@ typedef struct Voice {
     f64 time_into_pan_ms;
 
     f64 phase_bump;
+
+    
+    QuadVals* qv;
+    f64 time_since_opened_ms;
 
 } Voice;
 

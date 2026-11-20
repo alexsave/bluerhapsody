@@ -10,6 +10,8 @@ typedef struct QuadVals {
     f64 y_minus_1;
 } QuadVals;
 
+f64 lpf_one(QuadVals * quad_vals, f64 x, f64 freq0, f64 q);
+
 void lpf(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q);
 void hpf(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q);
 void bpf(QuadVals * quad_vals, f64* channel, u64 sample_count, f64 freq0, f64 q);
